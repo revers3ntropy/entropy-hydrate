@@ -1,0 +1,23 @@
+{
+    "compilerOptions": {
+        "strict": true,
+        "moduleResolution": "node",
+        "noEmit": false,
+        "removeComments": true,
+        "target": "es5",
+        "module": "commonjs",
+        "allowJs": true,
+        "noImplicitThis": true,
+        "noUnusedParameters": true,
+        "noFallthroughCasesInSwitch": true,
+        "noImplicitOverride": true,
+        "experimentalDecorators": true,
+        "forceConsistentCasingInFileNames": true,
+        "esModuleInterop": true,
+        "strictFunctionTypes": true,
+        "declaration": true
+    },
+    "include": [
+        "src/**/*"
+    ],
+}
