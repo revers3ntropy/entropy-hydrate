@@ -1,5 +1,12 @@
-export type El = (Element) & { reloadComponent?: Function };
-export type ElRaw = Element | HTMLElement | Document | Window;
+declare global {
+    interface Window {
+        reservoir: Reservoir;
+        children: HTMLCollection;
+    }
+}
+
+type El = (Element) & { reloadComponent?: Function };
+type ElRaw = Element | HTMLElement | Document | Window;
 
 const svgCache: Record<string, string> = {};
 let ROOT_PATH = '';
@@ -8,18 +15,36 @@ interface IPerfData {
     renders: string[]
 }
 
+function waitForDocumentReady (): Promise<void> {
+    return new Promise((resolve) => {
+        if (document.readyState !== 'complete') {
+            window.addEventListener('load', () => {
+                resolve();
+            });
+            return;
+        }
+        resolve();
+    })
+}
+
 /**
  * Returns a promise which resolves after a set amount of time
  */
-export async function sleep(ms: number): Promise<void> {
+async function sleep(ms: number): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+let currentComponentId = 0;
+
+function getComponentId() {
+    return currentComponentId++;
 }
 
 /**
  * Returns the string in HTML escaped form to prevent XSS attacks
  * and general horribleness
  */
-export function escapeHTML(unsafe: any): string {
+function escapeHTML(unsafe: any): string {
     return (unsafe ?? '')
         .toString()
         .replace(/&/g, '&amp;')
@@ -32,7 +57,7 @@ export function escapeHTML(unsafe: any): string {
 /**
  * Caches the SVG file content
  */
-export function preloadSVGs(...uris: string[]) {
+function preloadSVGs(...uris: string[]) {
     for (const uri of uris) {
         if (svgCache[uri]) {
             continue;
@@ -49,7 +74,7 @@ export function preloadSVGs(...uris: string[]) {
  * @param {HTMLElement} $el
  * @returns {Promise<void>}
  */
-export async function loadSVG($el: El) {
+async function loadSVG($el: El) {
     // allow modules to finish loading... not a very nice solution :P
     await sleep(0);
 
@@ -77,7 +102,7 @@ export async function loadSVG($el: El) {
 /**
  * Gets the SVG file content as plain text by fetching it
  */
-export async function getSVGFromURI(uri: string): Promise<string> {
+async function getSVGFromURI(uri: string): Promise<string> {
     if (svgCache[uri]) {
         return svgCache[uri];
     }
@@ -105,15 +130,16 @@ function attrsStartWith($el: El, start: string): string[] {
     return result;
 }
 
-class Reservoir {
+export class Reservoir {
+    private readonly id = getComponentId();
     private data: Record<string, unknown> = {};
     private lsData: Record<string, unknown> = {};
-    public localStorageKey = 'reservoir';
-    public static executeError = Symbol('__reservoir_ExecuteError');
+    public localStorageKey = 'HydrateWebAppData$' + this.id;
+    public static readonly executeError = Symbol('__reservoir_ExecuteError');
     private loaded = false;
     private loadedCBs: Function[] = [];
     public errors: [string, Error][] = [];
-    public perf: IPerfData = {
+    public readonly perf: IPerfData = {
         renders: []
     };
 
@@ -523,28 +549,75 @@ class Reservoir {
         return lsData;
     }
 
-    public init (rootPath: string, localStorageKey: string) {
-        // main function - don't put top-level code anywhere else
-        if (document.readyState !== 'complete') {
-            window.addEventListener('load', () =>{
-                this.init(rootPath, localStorageKey);
-            });
-            return;
-        }
+    public async init (rootPath: string, localStorageKey?: string) {
+        await waitForDocumentReady();
 
         ROOT_PATH = rootPath;
-        this.localStorageKey = localStorageKey;
+        if (localStorageKey) this.localStorageKey = localStorageKey;
         this.loadFromLocalStorage(true);
     }
-}
 
-declare global {
-    interface Window {
-        reservoir: Reservoir;
-        children: HTMLCollection;
+    Component<args extends any[], returns>
+    (name: string, cb: ($el: El, id: number, ...args: args) => returns):
+        ($el: El | string, ...args: args) => Promise<returns>
+    {
+        const addComponentToDOM = async ($el: El | string, ...args: args): Promise<returns> => {
+            await waitForDocumentReady();
+
+            if (typeof $el === 'string') {
+                const el = document.querySelector($el);
+                if (!el) throw `Cannot find element to register component: '${$el}'`;
+                $el = el;
+            }
+            if (!($el instanceof HTMLElement)) {
+                throw new Error('Trying to insert component into not-HTMLElement');
+            }
+            // don't reload children as this is up to the component to deal with
+            return cb($el, getComponentId(), ...args);
+        };
+
+        const reservoir = this;
+
+        class Component extends HTMLElement {
+            constructor() {
+                super();
+            }
+
+            connectedCallback() {
+                this.reloadComponent();
+            }
+
+            async reloadComponent() {
+                let rawArgs = this.getAttribute('args') || '';
+                rawArgs = '[' + rawArgs + ']';
+
+                const args = reservoir.execute(rawArgs, this);
+                if (args === Reservoir.executeError) return;
+
+                if (!Array.isArray(args)) {
+                    throw `args for '${name}' must be an array: ${JSON.stringify(
+                        args
+                    )}`;
+                }
+
+                await addComponentToDOM(this, ...args as args);
+                this.classList.add('reservoir-container');
+            }
+        }
+
+        // abide by naming requirements for custom elements
+        let componentName = name
+            .replace(/([a-z0–9])([A-Z])/g, '$1-$2')
+            .toLowerCase();
+        if (!componentName.includes('-')) {
+            componentName += '-';
+        }
+
+        customElements.define(componentName, Component);
+
+        return addComponentToDOM;
     }
 }
 
 const reservoir = new Reservoir();
 window.reservoir = reservoir;
-export default reservoir;

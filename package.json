@@ -1,6 +1,6 @@
 {
   "name": "hydrate-web",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Very lightweight web framework",
   "main": "index.js",
   "types": "index.d.ts",
@@ -13,6 +13,7 @@
   "author": "revers3ntropy",
   "devDependencies": {
     "dts-bundle": "^0.1.1",
+    "hydrate-web": "^0.0.1-a",
     "ts-loader": "^9.3.1",
     "webpack-cli": "^4.10.0",
     "webpack-shell-plugin-next": "^2.2.2"

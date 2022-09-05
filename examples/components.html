@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Components</title>
+    <script src="../index.js"></script>
+    <script defer>
+		reservoir.init('..');
+		reservoir.set('state', { clicks: 0 });
+
+		const MyButton = reservoir.Component('MyButton', ($el, id, text, bgColor) => {
+			$el.innerHTML = `
+                <button
+                    style="background-color: ${bgColor}"
+                    bind.click="console.log(state.clicks++)"
+                >
+                    ${text}
+                </button>
+            `;
+
+			return 1;
+		});
+		(() => {
+			MyButton('#insert-here', 'Click Me As Well!', 'blue');
+		})();
+    </script>
+</head>
+<body>
+<main>
+    <my-button args="'Click Me!', 'grey'"></my-button>
+    <div id="insert-here"></div>
+    <p pump="state.clicks"> Clicks</p>
+</main>
+</body>
+</html>

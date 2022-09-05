@@ -23,6 +23,6 @@ module.exports = {
     },
     devtool: 'source-map',
     optimization: {
-        minimize: true
+        minimize: true,
     }
 };
