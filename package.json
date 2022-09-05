@@ -1,6 +1,6 @@
 {
   "name": "hydrate-web",
-  "version": "0.0.0a",
+  "version": "0.0.1",
   "description": "Very lightweight web framework",
   "main": "index.js",
   "types": "index.d.ts",
