@@ -1,9 +1,53 @@
 * linguist-vendored
+
+*.sql linguist-vendored=false
+*.sql linguist-language=SQL
+*.sql linguist-detectable=true
+
 *.html linguist-vendored=false
+*.html linguist-language=HTML
+*.html linguist-detectable=true
+
 *.js linguist-vendored=false
+*.js linguist-language=JavaScript
+*.js linguist-detectable=true
+
 *.ts linguist-vendored=false
+*.ts linguist-language=TypeScript
+*.ts linguist-detectable=true
+
+*.php linguist-vendored=false
+*.php linguist-language=PHP
+*.php linguist-detectable=true
+
+*.svg linguist-vendored=false
+*.svg linguist-language=HTML
+*.svg linguist-detectable=true
+
 *.css linguist-vendored=false
-*.less linguist-vendored=false
-*.scss linguist-vendored=false
-*.md linguist-vendored=false
+*.css linguist-language=CSS
+*.css linguist-detectable=true
+
+*.sh linguist-vendored=false
+*.sh linguist-language=Shell
+*.sh linguist-detectable=true
+
 *.json linguist-vendored=false
+*.json linguist-language=JSON
+*.json linguist-detectable=true
+
+Dockerfile linguist-vendored=false
+Dockerfile linguist-language=Dockerfile
+Dockerfile linguist-detectable=true
+
+.*ignore linguist-vendored=false
+.*ignore linguist-language=Ignore List
+.*ignore linguist-detectable=true
+
+*.yml linguist-vendored=false
+*.yml linguist-language=YAML
+*.yml linguist-detectable=true
+
+*.md linguist-vendored=false
+*.md linguist-language=Markdown
+*.md linguist-detectable=true
