@@ -15,6 +15,12 @@ interface IPerfData {
     renders: string[]
 }
 
+interface IProps {
+    id: number;
+    $el: El;
+    [key: string]: any;
+}
+
 function waitForDocumentReady (): Promise<void> {
     return new Promise((resolve) => {
         if (document.readyState !== 'complete') {
@@ -557,26 +563,33 @@ export class Reservoir {
         this.loadFromLocalStorage(true);
     }
 
-    Component<args extends any[], returns>
-    (name: string, cb: ($el: El, id: number, ...args: args) => returns):
-        ($el: El | string, ...args: args) => Promise<returns>
+    Component
+    <Props extends IProps>
+    (name: string, cb: (props: Readonly<Props>) => string):
+        (props: Props) => Promise<string>
     {
-        const addComponentToDOM = async ($el: El | string, ...args: args): Promise<returns> => {
+        type rawProps = { $el: string | El, id?: number, [k: string]: any };
+
+        const addComponentToDOM = async (props: rawProps): Promise<string> => {
             await waitForDocumentReady();
 
-            if (typeof $el === 'string') {
-                const el = document.querySelector($el);
-                if (!el) throw `Cannot find element to register component: '${$el}'`;
-                $el = el;
+            if (typeof props.$el === 'string') {
+                const el = document.querySelector(props.$el);
+                if (!el) throw `Cannot find element to register component: '${props.$el}'`;
+                props.$el = el;
             }
-            if (!($el instanceof HTMLElement)) {
-                throw new Error('Trying to insert component into not-HTMLElement');
+            if (!(props.$el instanceof Element)) {
+                console.error(`Cannot add component to non-element: `, props.$el);
+                return '';
             }
-            // don't reload children as this is up to the component to deal with
-            return cb($el, getComponentId(), ...args);
-        };
 
-        const reservoir = this;
+            props.id = getComponentId();
+
+            const html = cb(Object.freeze(props as Props));
+            props.$el.innerHTML = html;
+            this.hydrate(props.$el);
+            return html;
+        };
 
         class Component extends HTMLElement {
             constructor() {
@@ -588,20 +601,19 @@ export class Reservoir {
             }
 
             async reloadComponent() {
-                let rawArgs = this.getAttribute('args') || '';
-                rawArgs = '[' + rawArgs + ']';
+                const props: rawProps = {
+                    $el: this
+                } as any;
 
-                const args = reservoir.execute(rawArgs, this);
-                if (args === Reservoir.executeError) return;
-
-                if (!Array.isArray(args)) {
-                    throw `args for '${name}' must be an array: ${JSON.stringify(
-                        args
-                    )}`;
+                for (let attr of this.getAttributeNames()) {
+                    // convert kebab-case to camelCase
+                    const propName = attr.replace(/-./g, x => x[1].toUpperCase());
+                    props[propName] = this.getAttribute(attr);
                 }
 
-                await addComponentToDOM(this, ...args as args);
-                this.classList.add('reservoir-container');
+                console.log(props);
+                await addComponentToDOM(props);
+                //this.classList.add('reservoir-container');
             }
         }
 

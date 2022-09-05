@@ -14,6 +14,11 @@ declare module 'hydrate-web' {
     interface IPerfData {
         renders: string[];
     }
+    interface IProps {
+        id: number;
+        $el: El;
+        [key: string]: any;
+    }
     export class Reservoir {
         localStorageKey: string;
         static readonly executeError: unique symbol;
@@ -30,7 +35,7 @@ declare module 'hydrate-web' {
         has(key: string): boolean;
         hydrate($el?: ElRaw): void;
         init(rootPath: string, localStorageKey?: string): Promise<void>;
-        Component<args extends any[], returns>(name: string, cb: ($el: El, id: number, ...args: args) => returns): ($el: El | string, ...args: args) => Promise<returns>;
+        Component<Props extends IProps>(name: string, cb: (props: Readonly<Props>) => string): (props: Props) => Promise<string>;
     }
     export {};
 }
