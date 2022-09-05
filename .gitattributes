@@ -1,0 +1,9 @@
+* linguist-vendored
+*.html linguist-vendored=false
+*.js linguist-vendored=false
+*.ts linguist-vendored=false
+*.css linguist-vendored=false
+*.less linguist-vendored=false
+*.scss linguist-vendored=false
+*.md linguist-vendored=false
+*.json linguist-vendored=false
