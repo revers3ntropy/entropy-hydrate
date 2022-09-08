@@ -1,635 +1,483 @@
-declare global {
-    interface Window {
-        reservoir: Reservoir;
-        children: HTMLCollection;
+import type { El, ElRaw, IProps } from "./types";
+import { attrsStartWith, escapeHTML, getComponentId, waitForDocumentReady } from "./utils";
+import * as globals from './globals';
+import { loadSVG } from "./svgs";
+
+
+function loadFromLocalStorage(shouldHydrate = true) {
+    const data = getFromLS();
+    for (const key in data) {
+        globals.lsData[key] = data[key];
     }
-}
-
-type El = (Element) & { reloadComponent?: Function };
-type ElRaw = Element | HTMLElement | Document | Window;
-
-const svgCache: Record<string, string> = {};
-let ROOT_PATH = '';
-
-interface IPerfData {
-    renders: string[]
-}
-
-interface IProps {
-    id: number;
-    $el: El;
-    [key: string]: any;
-}
-
-function waitForDocumentReady (): Promise<void> {
-    return new Promise((resolve) => {
-        if (document.readyState !== 'complete') {
-            window.addEventListener('load', () => {
-                resolve();
-            });
-            return;
-        }
-        resolve();
-    })
-}
-
-/**
- * Returns a promise which resolves after a set amount of time
- */
-async function sleep(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
-}
-
-let currentComponentId = 0;
-
-function getComponentId() {
-    return currentComponentId++;
-}
-
-/**
- * Returns the string in HTML escaped form to prevent XSS attacks
- * and general horribleness
- */
-function escapeHTML(unsafe: any): string {
-    return (unsafe ?? '')
-        .toString()
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#039;');
-}
-
-/**
- * Caches the SVG file content
- */
-function preloadSVGs(...uris: string[]) {
-    for (const uri of uris) {
-        if (svgCache[uri]) {
-            continue;
-        }
-        // don't await, because we want to load them all at the same time
-        getSVGFromURI(ROOT_PATH + '/assets/img/' + uri).then();
-    }
-}
-
-/**
- * Loads the SVG file content into the element
- * Adds the SVG HTML before the rest of the contents
- * of the element.
- * @param {HTMLElement} $el
- * @returns {Promise<void>}
- */
-async function loadSVG($el: El) {
-    // allow modules to finish loading... not a very nice solution :P
-    await sleep(0);
-
-    const svgPath = $el.getAttribute('svg');
-    if (!svgPath) {
-        throw new Error('No SVG path specified');
+    for (const key in globals.lsData) {
+        globals.data[key] = globals.lsData[key];
     }
 
-    let content = $el.getAttribute('svg-less-content') ?? $el.innerHTML;
-
-    // set before loading, so we don't load twice while waiting for the svg to load
-    $el.setAttribute('svg-less-content', content);
-
-    const uri = ROOT_PATH + '/assets/img/' + svgPath;
-
-    let svgContent = await getSVGFromURI(uri);
-
-    if (svgContent) {
-        content = svgContent + content
+    if (shouldHydrate) {
+        hydrate();
     }
-
-    $el.innerHTML = content;
+    globals.isLoaded();
 }
 
-/**
- * Gets the SVG file content as plain text by fetching it
- */
-async function getSVGFromURI(uri: string): Promise<string> {
-    if (svgCache[uri]) {
-        return svgCache[uri];
-    }
-
-    // if not cached, then go get it
-    const raw = await fetch(uri);
-    if (!raw.ok) {
-        console.error(`Failed to load SVG at '${uri}' for `, self);
-        return '';
-    }
-    let svg = await raw.text();
-
-    svgCache[uri] = svg;
-    return svg;
+function waitForLoaded (cb: Function) {
+    if (globals.loaded) return void cb();
+    globals.loadedCBs.push(cb);
 }
 
-function attrsStartWith($el: El, start: string): string[] {
-    const result = [];
+function saveToLocalStorage() {
+    waitForLoaded(() => {
+        localStorage.setItem(globals.localStorageKey, JSON.stringify(globals.lsData));
+    });
+}
 
-    for (let attr of $el.attributes) {
-        if (attr.name.startsWith(start)) {
-            result.push(attr.name);
+function setFromObj (obj: Record<string, unknown>, persist=false) {
+    // only update the DOM if there are changes to the state
+    let areChanges = false;
+    for (const k in obj) {
+        areChanges ||= globals.data[k] !== obj[k];
+        globals.data[k] = obj[k];
+
+        if (persist) {
+            globals.lsData[k] = obj[k];
         }
     }
-    return result;
+
+    if (areChanges) {
+        if (persist) saveToLocalStorage();
+        hydrate();
+    }
 }
 
-export class Reservoir {
-    private readonly id = getComponentId();
-    private data: Record<string, unknown> = {};
-    private lsData: Record<string, unknown> = {};
-    public localStorageKey = 'HydrateWebAppData$' + this.id;
-    public static readonly executeError = Symbol('__reservoir_ExecuteError');
-    private loaded = false;
-    private loadedCBs: Function[] = [];
-    public errors: [string, Error][] = [];
-    public readonly perf: IPerfData = {
-        renders: []
+function setDefaults (obj: Record<string, unknown>, persist=false) {
+    let areChanges = false;
+    for (const k in obj) {
+        areChanges ||= globals.data[k] !== obj[k];
+        globals.data[k] ??= obj[k];
+
+        if (persist) {
+            globals.lsData[k] = globals.data[k];
+        }
+    }
+
+    if (areChanges) {
+        if (persist) saveToLocalStorage();
+        hydrate();
+    }
+}
+
+function set(key: string | Record<string, unknown>, item: unknown, persist = false) {
+    if (typeof key === 'object') {
+        setFromObj(key, !!item);
+        return;
+    }
+
+    let areChanges = false;
+
+    areChanges ||= globals.data[key] !== item;
+    globals.data[key] = item;
+    if (persist) {
+        globals.lsData[key] = item;
+    }
+
+    if (areChanges) {
+        if (persist) {
+            saveToLocalStorage();
+        }
+        hydrate();
+    }
+}
+
+function get(key: string) {
+    const path = key.split('.');
+    let current: any = globals.data;
+    for (let key of path) {
+        if (!(key in current)) {
+            globals.errors.push([key, new Error('Key not found in reservoir')]);
+            return undefined;
+        }
+        current = current[key];
+    }
+    return current;
+}
+
+function execute(key: string, $el: El): any {
+    const initialData = JSON.stringify(globals.data);
+
+    const parameters = {
+        ...globals.data,
     };
 
-    loadFromLocalStorage(hydrate = true) {
-        this.lsData = this.getFromLS();
-        this.data = {
-            ...this.data,
-            ...this.lsData
-        };
-
-        if (hydrate) {
-            this.hydrate();
+    let parent: El | null = $el;
+    while (parent) {
+        for (let attr of attrsStartWith(parent, 'pour.')) {
+            const key = attr.split('.', 2)[1];
+            const attrValue = parent.getAttribute(attr);
+            if (attrValue === null) continue;
+            const value = execute(attrValue, parent);
+            if (value === globals.executeError) continue;
+            parameters[key] = value;
         }
-        this.loaded = true;
-        for (let cb of this.loadedCBs) {
-            cb();
+        parent = parent.parentElement;
+    }
+
+    parameters['$el'] = $el;
+
+    const envVarNames = Object.keys(parameters);
+    const envVarValues = Object.keys(parameters).map(k => parameters[k]);
+    const execBody = `
+        return (${key});
+    `;
+
+    let res: any;
+    try {
+        res = new Function(...envVarNames, execBody).call(window.reservoir, ...envVarValues);
+    } catch (e: any) {
+        if (e instanceof ReferenceError || e instanceof TypeError) {
+            globals.errors.push([key, e]);
+        } else if (e.toString() === 'SyntaxError: Arg string terminates parameters early') {
+            console.error(`Error executing '${key}': ${e}`, envVarNames, envVarValues);
+        } else {
+            console.error(`Error executing '${key}': ${e}`);
         }
+        res = globals.executeError;
     }
 
-    waitForLoaded (cb: Function) {
-        if (this.loaded) return void cb();
-        this.loadedCBs.push(cb);
+    if (initialData !== JSON.stringify(globals.data)) {
+        hydrate();
     }
 
-    saveToLocalStorage() {
-        this.waitForLoaded(() => {
-            localStorage.setItem(this.localStorageKey, JSON.stringify(this.lsData));
-        });
-    }
+    return res;
+}
 
-    setFromObj (obj: Record<string, unknown>, persist=false) {
-        // only update the DOM if there are changes to the state
-        let areChanges = false;
-        for (const k in obj) {
-            areChanges ||= this.data[k] !== obj[k];
-            this.data[k] = obj[k];
+function has(key: string) {
+    return get(key) !== undefined;
+}
 
-            if (persist) {
-                this.lsData[k] = obj[k];
+function hydrate($el: ElRaw = document) {
+    const start = performance.now();
+
+    if ($el instanceof Element) {
+        if ($el.hasAttribute('hidden') || $el.hasAttribute('hidden-dry')) {
+            if (!hydrateIf($el)) {
+                return;
             }
         }
 
-        if (areChanges) {
-            if (persist) this.saveToLocalStorage();
-            this.hydrate();
-        }
-    }
-
-    setDefaults (obj: Record<string, unknown>, persist=false) {
-        let areChanges = false;
-        for (const k in obj) {
-            areChanges ||= this.data[k] !== obj[k];
-            this.data[k] ??= obj[k];
-
-            if (persist) {
-                this.lsData[k] = this.data[k];
-            }
-        }
-
-        if (areChanges) {
-            if (persist) this.saveToLocalStorage();
-            this.hydrate();
-        }
-    }
-
-    set(key: string | Record<string, unknown>, item: unknown, persist = false) {
-        if (typeof key === 'object') {
-            this.setFromObj(key, !!item);
+        if ($el.getAttribute('aria-hidden') === 'true') {
             return;
         }
 
-        let areChanges = false;
-
-        areChanges ||= this.data[key] !== item;
-        this.data[key] = item;
-        if (persist) {
-            this.lsData[key] = item;
+        if ($el.hasAttribute('waterproof')) {
+            return;
         }
 
-        if (areChanges) {
-            if (persist) {
-                this.saveToLocalStorage();
-            }
-            this.hydrate();
-        }
-    }
-
-    get(key: string) {
-        const path = key.split('.');
-        let current: any = this.data;
-        for (let key of path) {
-            if (!(key in current)) {
-                this.errors.push([key, new Error('Key not found in reservoir')]);
-                return undefined;
-            }
-            current = current[key];
-        }
-        return current;
-    }
-
-    execute(key: string, $el: El): any {
-        const initialData = JSON.stringify(this.data);
-
-        const parameters = {
-            ...this.data,
-        };
-
-        let parent: El | null = $el;
-        while (parent) {
-            for (let attr of attrsStartWith(parent, 'pour.')) {
-                const key = attr.split('.', 2)[1];
-                const attrValue = parent.getAttribute(attr);
-                if (attrValue === null) continue;
-                const value = this.execute(attrValue, parent);
-                if (value === Reservoir.executeError) continue;
-                parameters[key] = value;
-            }
-            parent = parent.parentElement;
+        if ($el.hasAttribute('bind')) {
+            bind($el);
         }
 
-        parameters['$el'] = $el;
-
-        const envVarNames = Object.keys(parameters);
-        const envVarValues = Object.keys(parameters).map(k => parameters[k]);
-        const thisParam = this;
-        const execBody = `
-            return (${key});
-        `;
-
-        let res: any;
-        try {
-            res = new Function(...envVarNames, execBody).call(thisParam, ...envVarValues);
-        } catch (e: any) {
-            if (e instanceof ReferenceError || e instanceof TypeError) {
-                this.errors.push([key, e]);
-            } else if (e.toString() === 'SyntaxError: Arg string terminates parameters early') {
-                console.error(`Error executing '${key}': ${e}`, envVarNames, envVarValues);
-            } else {
-                console.error(`Error executing '${key}': ${e}`);
-            }
-            res = Reservoir.executeError;
+        if ($el.hasAttribute('pump')) {
+            hydrateDry($el);
         }
 
-        if (initialData !== JSON.stringify(this.data)) {
-            this.hydrate();
-        }
-
-        return res;
-    }
-
-    has(key: string) {
-        return this.get(key) !== undefined;
-    }
-
-    hydrate($el: ElRaw = document) {
-        const start = performance.now();
-
-        if ($el instanceof Element) {
-            if ($el.hasAttribute('hidden') || $el.hasAttribute('hidden-dry')) {
-                if (!this.hydrateIf($el)) {
-                    return;
-                }
-            }
-
-            if ($el.getAttribute('aria-hidden') === 'true') {
-                return;
-            }
-
-            if ($el.hasAttribute('waterproof')) {
-                return;
-            }
-
-            if ($el.hasAttribute('bind')) {
-                this.bind($el);
-            }
-
-            if ($el.hasAttribute('pump')) {
-                this.hydrateDry($el);
-            }
-
-            for (let attr of $el.getAttributeNames() || []) {
-                if (attr.startsWith('pump.')) {
-                    this.hydrateAttribute($el, attr);
-                } else if (attr.startsWith('bind.')) {
-                    this.bindListener($el, attr.split('.', 2)[1]);
-                }
-            }
-
-            if ($el.hasAttribute('foreach')) {
-                this.hydrateFor($el);
-            }
-
-            if ($el?.hasAttribute?.('args') && 'reloadComponent' in $el) {
-                ($el as any).reloadComponent();
-            }
-
-            if ($el.hasAttribute('svg')) {
-                loadSVG($el).then();
+        for (let attr of $el.getAttributeNames() || []) {
+            if (attr.startsWith('pump.')) {
+                hydrateAttribute($el, attr);
+            } else if (attr.startsWith('bind.')) {
+                bindListener($el, attr.split('.', 2)[1]);
             }
         }
 
-        for (const child of $el.children) {
-            // don't await, because we don't want to block the page load
-            this.hydrate(child);
+        if ($el.hasAttribute('foreach')) {
+            hydrateFor($el);
         }
 
-        if ($el === document) {
-            this.perf.renders.push(`Hydrated document in ${performance.now() - start}ms: ${new Error().stack}`);
+        if ($el?.hasAttribute?.('args') && 'reloadComponent' in $el) {
+            ($el as any).reloadComponent();
+        }
+
+        if ($el.hasAttribute('svg')) {
+            loadSVG($el).then();
         }
     }
 
-    private hydrateDry($el: El) {
-        const key = $el.getAttribute('pump');
-        const to = $el.getAttribute('pump-to');
-        let dry = $el.getAttribute('dry') ?? $el.innerHTML;
+    for (const child of $el.children) {
+        // don't await, because we don't want to block the page load
+        hydrate(child);
+    }
+
+    if ($el === document) {
+        globals.perf.renders.push(`Hydrated document in ${performance.now() - start}ms: ${new Error().stack}`);
+    }
+}
+
+function hydrateDry($el: El) {
+    const key = $el.getAttribute('pump');
+    const to = $el.getAttribute('pump-to');
+    let dry = $el.getAttribute('dry') ?? $el.innerHTML;
+    if (!key) return;
+    let value = execute(key, $el);
+    if (value === globals.executeError) return;
+
+    if (typeof value === 'object') {
+        value = JSON.stringify(value);
+    }
+
+    if (!$el.hasAttribute('pump-dirty')) {
+        value = escapeHTML(value);
+    }
+
+    let html;
+
+    if (to === 'end') {
+        html = dry + value;
+    } else if (to === 'replace') {
+        html = value;
+    } else {
+        html = value + dry;
+    }
+
+    if (!$el.hasAttribute('dry')) {
+        $el.setAttribute('dry', dry);
+    }
+
+    $el.innerHTML = html;
+}
+
+function hydrateIf($el: El) {
+    let key = $el.getAttribute('hidden-dry');
+
+    if (!key) {
+        key = $el.getAttribute('hidden');
         if (!key) return;
-        let value = this.execute(key, $el);
-        if (value === Reservoir.executeError) return;
-
-        if (typeof value === 'object') {
-            value = JSON.stringify(value);
-        }
-
-        if (!$el.hasAttribute('pump-dirty')) {
-            value = escapeHTML(value);
-        }
-
-        let html;
-
-        if (to === 'end') {
-            html = dry + value;
-        } else if (to === 'replace') {
-            html = value;
-        } else {
-            html = value + dry;
-        }
-
-        if (!$el.hasAttribute('dry')) {
-            $el.setAttribute('dry', dry);
-        }
-
-        $el.innerHTML = html;
+        $el.setAttribute('hidden-dry', '');
     }
 
-    private hydrateIf($el: El) {
-        let key = $el.getAttribute('hidden-dry');
+    const value = execute(key, $el);
+    const isShown = !value && value !== globals.executeError;
 
-        if (!key) {
-            key = $el.getAttribute('hidden');
+    if (isShown) {
+        $el.removeAttribute('aria-hidden');
+        $el.removeAttribute('hidden');
+    } else {
+        $el.setAttribute('aria-hidden', 'true');
+        $el.setAttribute('hidden', '');
+    }
+    return isShown;
+}
+
+function bind($el: El | HTMLInputElement) {
+    if (!('value' in $el)) {
+        throw 'Cannot bind to element without value attribute';
+    }
+
+    const key = $el.getAttribute('bind');
+    const persist = $el.hasAttribute('bind-persist');
+
+    if (key === null || !key) return;
+    if (persist === undefined) return;
+
+    if (!$el.getAttribute('bound')) {
+
+        function update() {
             if (!key) return;
-            $el.setAttribute('hidden-dry', '');
+            if ($el instanceof HTMLInputElement) {
+                set(key, $el.value, persist);
+            } else throw 'Cannot bind to element without value attribute';
         }
 
-        const value = this.execute(key, $el);
-        const isShown = !value && value !== Reservoir.executeError;
-
-        if (isShown) {
-            $el.removeAttribute('aria-hidden');
-            $el.removeAttribute('hidden');
-        } else {
-            $el.setAttribute('aria-hidden', 'true');
-            $el.setAttribute('hidden', '');
-        }
-        return isShown;
+        $el.addEventListener('change', update);
+        $el.addEventListener('keyup', update);
+        $el.addEventListener('keydown', update);
+        $el.addEventListener('click', update);
     }
 
-    private bind($el: El | HTMLInputElement) {
-        if (!('value' in $el)) {
-            throw 'Cannot bind to element without value attribute';
-        }
+    $el.setAttribute('bound', 'true');
 
-        const key = $el.getAttribute('bind');
-        const persist = $el.hasAttribute('bind-persist');
+    if (has(key)) {
+        $el.value = get(key);
+    } else {
+        set(key, $el.value);
+    }
+}
 
-        if (key === null || !key) return;
-        if (persist === undefined) return;
+function bindListener($el: El, name: string) {
+    const onEvent = $el.getAttribute(`bind.${name}`);
+    if (!onEvent) return;
 
-        const self = this;
-
-        if (!$el.getAttribute('bound')) {
-
-            function update() {
-                if (!key) return;
-                if ($el instanceof HTMLInputElement) {
-                    self.set(key, $el.value, persist);
-                } else throw 'Cannot bind to element without value attribute';
-            }
-
-            $el.addEventListener('change', update);
-            $el.addEventListener('keyup', update);
-            $el.addEventListener('keydown', update);
-            $el.addEventListener('click', update);
-        }
-
-        $el.setAttribute('bound', 'true');
-
-        if (this.has(key)) {
-            $el.value = this.get(key);
-        } else {
-            this.set(key, $el.value);
-        }
+    if ($el.hasAttribute(`bound-${name}`)) {
+        return;
     }
 
-    private bindListener($el: El, name: string) {
-        const onEvent = $el.getAttribute(`bind.${name}`);
-        if (!onEvent) return;
+    $el.setAttribute(`bound-${name}`, 'true');
 
-        const self = this;
+    $el.addEventListener(name, () => {
+        execute(onEvent, $el);
+    });
+}
 
-        if ($el.hasAttribute(`bound-${name}`)) {
-            return;
-        }
+function hydrateAttribute($el: El, attrName: string) {
+    const key = '`' + $el.getAttribute(attrName) + '`';
+    let value = execute(key, $el);
+    if (value === globals.executeError) return;
 
-        $el.setAttribute(`bound-${name}`, 'true');
+    const attr = attrName.split('.', 2)[1];
+    $el.setAttribute(attr, value);
 
-        $el.addEventListener(name, () => {
-            self.execute(onEvent, $el);
-        });
-    }
-
-    private hydrateAttribute($el: El, attrName: string) {
-        const key = '`' + $el.getAttribute(attrName) + '`';
-        let value = this.execute(key, $el);
-        if (value === Reservoir.executeError) return;
-
-        const attr = attrName.split('.', 2)[1];
-        $el.setAttribute(attr, value);
-
-        if (attr === 'args' && 'reloadComponent' in $el) {
-            if (typeof $el.reloadComponent === 'function') {
-                $el.reloadComponent();
-            }
+    if (attr === 'args' && 'reloadComponent' in $el) {
+        if (typeof $el.reloadComponent === 'function') {
+            $el.reloadComponent();
         }
     }
+}
 
-    private hydrateFor($el: El) {
-        const key = $el.getAttribute('foreach');
-        if (!key) return;
+function hydrateFor($el: El) {
+    const key = $el.getAttribute('foreach');
+    if (!key) return;
 
-        let dry = $el.getAttribute('foreach-dry') ?? $el.innerHTML;
+    let dry = $el.getAttribute('foreach-dry') ?? $el.innerHTML;
 
-        const [ symbol, value ] = key.split(' in ');
+    const [ symbol, value ] = key.split(' in ');
 
-        let iterator = this.execute(value, $el);
+    let iterator = execute(value, $el);
 
-        if (iterator === Reservoir.executeError) {
-            $el.innerHTML = '';
-            if (!$el.hasAttribute('foreach-dry')) {
-                $el.setAttribute('foreach-dry', dry);
-            }
-            return;
-        }
-
-        if (!Array.isArray(iterator)) {
-            console.error(`foreach '${key}' value is not an array: `, iterator);
-            return;
-        }
-
-        const eachAttrs = [];
-
-        for (let attr of $el?.getAttributeNames?.() || []) {
-            if (attr.startsWith('each.')) {
-                eachAttrs.push(attr);
-            }
-        }
-
+    if (iterator === globals.executeError) {
         $el.innerHTML = '';
-
-        for (let item of iterator) {
-            const itemDiv = document.createElement('div');
-            itemDiv.innerHTML = dry;
-            itemDiv.setAttribute(`pour.${symbol}`, JSON.stringify(item));
-
-            for (let attr of eachAttrs) {
-                const key = '`' + $el.getAttribute(attr) + '`';
-                const value = this.execute(key, itemDiv);
-                if (value === Reservoir.executeError) continue;
-                itemDiv.setAttribute(attr.split('.', 2)[1], value);
-            }
-
-            $el.classList.add('reservoir-container');
-            $el.appendChild(itemDiv);
-        }
-
-        // do at end so that the element stays hidden until it has been
-        // fully initialised.
         if (!$el.hasAttribute('foreach-dry')) {
             $el.setAttribute('foreach-dry', dry);
         }
+        return;
     }
 
-    private getFromLS (): Record<string, unknown> {
-        const lsDataRaw = localStorage.getItem(this.localStorageKey) || '{}';
-        let lsData;
-
-        try {
-            lsData = JSON.parse(lsDataRaw);
-        } catch (E) {
-            console.error('Error parsing reservoir data from local storage: ', lsDataRaw, ' | threw: ', E);
-            lsData = {};
-        }
-
-        if (typeof lsData !== 'object' || Array.isArray(lsData) || lsData === null) {
-            console.error('Error parsing reservoir data from local storage - must be object');
-            lsData = {};
-        }
-        return lsData;
+    if (!Array.isArray(iterator)) {
+        console.error(`foreach '${key}' value is not an array: `, iterator);
+        return;
     }
 
-    public async init (rootPath: string, localStorageKey?: string) {
-        await waitForDocumentReady();
+    const eachAttrs = [];
 
-        ROOT_PATH = rootPath;
-        if (localStorageKey) this.localStorageKey = localStorageKey;
-        this.loadFromLocalStorage(true);
+    for (let attr of $el?.getAttributeNames?.() || []) {
+        if (attr.startsWith('each.')) {
+            eachAttrs.push(attr);
+        }
     }
 
-    Component
-    <Props extends IProps>
-    (name: string, cb: (props: Readonly<Props>) => string):
-        (props: Props) => Promise<string>
-    {
-        type rawProps = { $el: string | El, id?: number, [k: string]: any };
+    $el.innerHTML = '';
 
-        const addComponentToDOM = async (props: rawProps): Promise<string> => {
-            await waitForDocumentReady();
+    for (let item of iterator) {
+        const itemDiv = document.createElement('div');
+        itemDiv.innerHTML = dry;
+        itemDiv.setAttribute(`pour.${symbol}`, JSON.stringify(item));
 
-            if (typeof props.$el === 'string') {
-                const el = document.querySelector(props.$el);
-                if (!el) throw `Cannot find element to register component: '${props.$el}'`;
-                props.$el = el;
-            }
-            if (!(props.$el instanceof Element)) {
-                console.error(`Cannot add component to non-element: `, props.$el);
-                return '';
-            }
-
-            props.id = getComponentId();
-
-            const html = cb(Object.freeze(props as Props));
-            props.$el.innerHTML = html;
-            this.hydrate(props.$el);
-            return html;
-        };
-
-        class Component extends HTMLElement {
-            constructor() {
-                super();
-            }
-
-            connectedCallback() {
-                this.reloadComponent();
-            }
-
-            async reloadComponent() {
-                const props: rawProps = {
-                    $el: this
-                } as any;
-
-                for (let attr of this.getAttributeNames()) {
-                    // convert kebab-case to camelCase
-                    const propName = attr.replace(/-./g, x => x[1].toUpperCase());
-                    props[propName] = this.getAttribute(attr);
-                }
-
-                console.log(props);
-                await addComponentToDOM(props);
-                //this.classList.add('reservoir-container');
-            }
+        for (let attr of eachAttrs) {
+            const key = '`' + $el.getAttribute(attr) + '`';
+            const value = execute(key, itemDiv);
+            if (value === globals.executeError) continue;
+            itemDiv.setAttribute(attr.split('.', 2)[1], value);
         }
 
-        // abide by naming requirements for custom elements
-        let componentName = name
-            .replace(/([a-z0–9])([A-Z])/g, '$1-$2')
-            .toLowerCase();
-        if (!componentName.includes('-')) {
-            componentName += '-';
-        }
+        $el.classList.add('reservoir-container');
+        $el.appendChild(itemDiv);
+    }
 
-        customElements.define(componentName, Component);
-
-        return addComponentToDOM;
+    // do at end so that the element stays hidden until it has been
+    // fully initialised.
+    if (!$el.hasAttribute('foreach-dry')) {
+        $el.setAttribute('foreach-dry', dry);
     }
 }
 
-const reservoir = new Reservoir();
-window.reservoir = reservoir;
+function getFromLS (): Record<string, unknown> {
+    const lsDataRaw = localStorage.getItem(globals.localStorageKey) || '{}';
+    let lsData;
+
+    try {
+        lsData = JSON.parse(lsDataRaw);
+    } catch (E) {
+        console.error('Error parsing reservoir data from local storage: ', lsDataRaw, ' | threw: ', E);
+        lsData = {};
+    }
+
+    if (typeof lsData !== 'object' || Array.isArray(lsData) || lsData === null) {
+        console.error('Error parsing reservoir data from local storage - must be object');
+        lsData = {};
+    }
+    return lsData;
+}
+
+async function init (rootPath: string, localStorageKey?: string) {
+    await waitForDocumentReady();
+
+    globals.setRootPath(rootPath);
+    if (localStorageKey) localStorageKey = localStorageKey;
+    loadFromLocalStorage(true);
+}
+
+function Component
+<Props extends IProps>
+(name: string, cb: (props: Readonly<Props>) => string):
+    (props: Props) => Promise<string>
+{
+    type rawProps = { $el: string | El, id?: number, [k: string]: any };
+
+    const addComponentToDOM = async (props: rawProps): Promise<string> => {
+        await waitForDocumentReady();
+
+        if (typeof props.$el === 'string') {
+            const el = document.querySelector(props.$el);
+            if (!el) throw `Cannot find element to register component: '${props.$el}'`;
+            props.$el = el;
+        }
+        if (!(props.$el instanceof Element)) {
+            console.error(`Cannot add component to non-element: `, props.$el);
+            return '';
+        }
+
+        props.id = getComponentId();
+
+        const html = cb(Object.freeze(props as Props));
+        props.$el.innerHTML = html;
+        hydrate(props.$el);
+        return html;
+    };
+
+    class Component extends HTMLElement {
+        constructor() {
+            super();
+        }
+
+        connectedCallback() {
+            this.reloadComponent();
+        }
+
+        async reloadComponent() {
+            const props: rawProps = {
+                $el: this
+            } as any;
+
+            for (let attr of this.getAttributeNames()) {
+                // convert kebab-case to camelCase
+                const propName = attr.replace(/-./g, x => x[1].toUpperCase());
+                props[propName] = this.getAttribute(attr);
+            }
+
+            await addComponentToDOM(props);
+            this.classList.add('reservoir-container');
+        }
+    }
+
+    // abide by naming requirements for custom elements
+    let componentName = name
+        .replace(/([a-z0–9])([A-Z])/g, '$1-$2')
+        .toLowerCase();
+    if (!componentName.includes('-')) {
+        componentName += '-';
+    }
+
+    customElements.define(componentName, Component);
+
+    return addComponentToDOM;
+}
+
+window.reservoir = {
+
+};
