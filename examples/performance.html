@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Data Loading</title>
+    <script src="../index.js">/** @typedef {import('hydrate-web').Reservoir} reservoir */</script>
+    <script defer type="module">
+		await reservoir.init();
+
+        const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+
+		function makeText (length) {
+			let result  = '';
+			for (let i = 0; i < length; i++) {
+				result += characters.charAt(Math.floor(Math.random() * characters.length));
+			}
+			return result;
+		}
+
+		reservoir.Component('my-component', ({ text, show }) => `
+            <p
+                hidden="${!show}"
+                style="border-bottom: 1px solid grey; overflow-x: hidden"
+            >
+                ${text}
+            </p>
+        `);
+
+		reservoir.set({
+			data: Array(1).fill(0).map(() => ({
+                text: makeText(100),
+                show: true
+            }))
+		})
+
+    </script>
+</head>
+<body>
+<main>
+    <p foreach="data in data">
+        <my-component
+            text="data.text"
+            show="data.show"
+        ></my-component>
+    </p>
+</main>
+</body>
+</html>

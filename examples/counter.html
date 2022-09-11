@@ -3,9 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <title>Counter</title>
-    <script src="../index.js">/** @typedef {import('hydrate-web').Reservoir} reservoir */</script>
-    <script defer>
-		reservoir.init('..');
+    <script defer type="module">
+		await reservoir.init();
 		reservoir.set('state', { counter: 0 });
     </script>
 </head>

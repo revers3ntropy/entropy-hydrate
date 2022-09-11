@@ -4,26 +4,26 @@
     <meta charset="UTF-8">
     <title>Components</title>
     <script src="../index.js">/** @typedef {import('hydrate-web').Reservoir} reservoir */</script>
-    <script defer>
-		reservoir.init('..');
-		reservoir.set('state', { clicks: 0 });
+    <script defer type="module">
+        await reservoir.init('.');
+        reservoir.set('state', { clicks: 0 });
 
-		const MyButton = reservoir.Component('MyButton', ({ text, bgColor }) => `
+        const MyButton = reservoir.Component('my-button', ({ text, bgColor }) => `
             <button
                 style="background-color: ${bgColor}"
                 bind.click="console.log(state.clicks++)"
             >
                 ${text}
             </button>
-		`);
+        `);
 
-        MyButton({ $el: '#insert-here', text: 'Click Me As Well!', bgColor: 'lightblue' });
+        MyButton({$el: '.insert-here', text: 'Click Me As Well!', bgColor: 'lightblue'});
     </script>
 </head>
 <body>
 <main>
     <my-button text="Click Me!" bg-color="yellow"></my-button>
-    <div id="insert-here"></div>
+    <div class="insert-here"></div>
     <p pump="state.clicks"> Clicks</p>
 </main>
 </body>

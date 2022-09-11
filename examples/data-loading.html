@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Data Loading</title>
+    <script src="../index.js">/** @typedef {import('hydrate-web').Reservoir} reservoir */</script>
+    <script defer type="module">
+		await reservoir.init();
+
+		function getSomeExpensiveData() {
+			return new Promise(resolve => {
+				setTimeout(() => {
+					resolve({ data: ['My expensive data'] });
+				}, 1500);
+			});
+		}
+
+		reservoir.set({
+            myData: await getSomeExpensiveData()
+		});
+    </script>
+</head>
+<body>
+<main>
+    <p>
+        This is some expensive data:
+        <b pump="myData.data[0]" pump-replace>
+            Loading...
+        </b>
+    </p>
+    <p pump="myData.otherData[0]" pump-replace>
+        This data doesn't exist
+    </p>
+</main>
+</body>
+</html>

@@ -25,9 +25,6 @@ function preloadSVGs(...uris: string[]) {
  * @returns {Promise<void>}
  */
 export  async function loadSVG($el: El) {
-    // allow modules to finish loading... not a very nice solution :P
-    await sleep(0);
-
     const svgPath = $el.getAttribute('svg');
     if (!svgPath) {
         throw new Error('No SVG path specified');
