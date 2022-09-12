@@ -64,7 +64,7 @@ export function setDefaults (obj: Record<string, unknown>, persist=false) {
     }
 }
 
-export function set(key: string | Record<string, unknown>, item: unknown, persist = false) {
+export function set(key: string | Record<string, unknown>, item?: unknown, persist = false) {
     if (typeof key === 'object') {
         setFromObj(key, !!item);
         return;

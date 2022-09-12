@@ -1,5 +1,4 @@
 import { El } from "./types";
-import { sleep } from "./utils";
 import { ROOT_PATH } from "./globals";
 
 const svgCache: Record<string, string> = {};

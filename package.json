@@ -3,6 +3,7 @@
   "version": "0.0.3",
   "description": "Very lightweight web framework",
   "main": "index.js",
+  "type": "module",
   "types": "index.d.ts",
   "scripts": {
     "setup": "npm i; npm install dts-bundle -g; npm run build",

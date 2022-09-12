@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <title>Components</title>
-    <script src="../index.js">/** @typedef {import('hydrate-web').Reservoir} reservoir */</script>
+    <script src="../index.js"></script>
     <script defer type="module">
-        await reservoir.init('.');
+        await reservoir.init();
         reservoir.set('state', { clicks: 0 });
 
         const MyButton = reservoir.Component('my-button', ({ text, bgColor }) => `

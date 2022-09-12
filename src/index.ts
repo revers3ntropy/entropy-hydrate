@@ -4,7 +4,15 @@ import { get, loadFromLocalStorage, set, setDefaults } from "./hydrate";
 import { Component } from "./components";
 import { setLocalStorageKey } from "./globals";
 
-async function init (rootPath: string = '.', localStorageKey?: string) {
+export interface IInitConfig {
+    rootPath?: string;
+    localStorageKey?: string;
+}
+
+async function init({
+             rootPath = '.',
+             localStorageKey
+}: IInitConfig ={}) {
     await waitForDocumentReady();
 
     globals.setRootPath(rootPath);
@@ -14,10 +22,22 @@ async function init (rootPath: string = '.', localStorageKey?: string) {
     loadFromLocalStorage(true);
 }
 
-window.reservoir = {
+const reservoir = {
     Component,
     init,
     setDefaults,
     set,
     get,
 };
+
+export {
+    Component,
+    init,
+    setDefaults,
+    set,
+    get,
+    reservoir
+};
+
+window.reservoir = reservoir;
+export default reservoir;

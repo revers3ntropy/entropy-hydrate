@@ -1,10 +1,15 @@
 const path = require('path');
 
 module.exports = {
+    target: 'web',
     entry: path.join(path.resolve(__dirname), './src/index.ts'),
     output: {
         filename: './index.js',
-        path: path.resolve(__dirname)
+        path: path.resolve(__dirname),
+        library: 'reservoir',
+        libraryTarget: 'umd',
+        umdNamedDefine: true,
+        globalObject: `window`
     },
     mode: 'production',
     resolve: {
