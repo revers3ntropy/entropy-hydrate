@@ -6,7 +6,7 @@ const svgCache: Record<string, string> = {};
 /**
  * Caches the SVG file content
  */
-function preloadSVGs(...uris: string[]) {
+export function preloadSVGs(...uris: string[]) {
     for (const uri of uris) {
         if (svgCache[uri]) {
             continue;

@@ -18,13 +18,15 @@ export function loadFromLocalStorage(shouldHydrate = true) {
     globals.isLoaded();
 }
 
-export function waitForLoaded (cb: Function) {
-    if (globals.loaded) return void cb();
-    globals.loadedCBs.push(cb);
+export async function waitForLoaded () {
+    return await new Promise<void>(resolve => {
+        if (globals.loaded) return resolve();
+        globals.loadedCBs.push(resolve);
+    });
 }
 
 export function saveToLocalStorage() {
-    waitForLoaded(() => {
+    waitForLoaded().then(() => {
         localStorage.setItem(globals.localStorageKey, JSON.stringify(globals.lsData));
     });
 }

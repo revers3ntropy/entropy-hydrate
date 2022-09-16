@@ -18,13 +18,6 @@ export function waitForDocumentReady (): Promise<void> {
 }
 
 /**
- * Returns a promise which resolves after a set amount of time
- */
-export async function sleep(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
-}
-
-/**
  * Returns the string in HTML escaped form to prevent XSS attacks
  * and general horribleness
  */
