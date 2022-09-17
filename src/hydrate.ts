@@ -281,9 +281,10 @@ function bind($el: El | HTMLInputElement) {
 
         function update() {
             if (!key) return;
-            if ($el instanceof HTMLInputElement) {
-                set(key, $el.value, persist);
-            } else throw 'Cannot bind to element without value attribute';
+            if (!('value' in $el)) {
+                throw 'Cannot bind to element without value attribute';
+            }
+            set(key, $el.value, persist);
         }
 
         $el.addEventListener('change', update);

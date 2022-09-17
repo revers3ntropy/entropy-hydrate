@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Data Loading</title>
+    <script src="../index.js"></script>
+    <script defer type="module">
+		await reservoir.init();
+    </script>
+</head>
+<body>
+<main>
+    <form>
+        <label>
+            <input bind="name" bind-persist>
+        </label>
+        <hr>
+        <label>
+            <textarea id=a bind="data" bind-persist></textarea>
+        </label>
+    </form>
+</main>
+</body>
+</html>
