@@ -48,7 +48,7 @@ declare module 'hydrate-web/src/hydrate' {
 
 declare module 'hydrate-web/src/components' {
     import { IProps } from "hydrate-web/src/types";
-    export function Component<Props extends IProps>(name: string, cb: (props: Readonly<Props>) => string): (props: Props) => Promise<string>;
+    export function Component<Props extends IProps>(name: string, cb: (props: Readonly<Props>) => unknown): (props: Props) => Promise<unknown>;
 }
 
 declare module 'hydrate-web/src/types' {

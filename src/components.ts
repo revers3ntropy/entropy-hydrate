@@ -4,12 +4,12 @@ import { execute, hydrate } from "./hydrate";
 
 export function Component
 <Props extends IProps>
-(name: string, cb: (props: Readonly<Props>) => string):
-    (props: Props) => Promise<string>
+(name: string, cb: (props: Readonly<Props>) => unknown):
+    (props: Props) => Promise<unknown>
 {
     type rawProps = { $el: string | El, id?: number, [k: string]: any };
 
-    const addComponentToDOM = async (props: rawProps): Promise<string> => {
+    const addComponentToDOM = async (props: rawProps): Promise<unknown> => {
         await waitForDocumentReady();
 
         if (typeof props.$el === 'string') {
@@ -24,8 +24,12 @@ export function Component
 
         props.id = getComponentId();
 
-        const html = cb(Object.freeze(props as Props));
-        props.$el.innerHTML = html;
+        const html = await cb(Object.freeze(props as Props));
+        if (typeof html === 'string') {
+            props.$el.innerHTML = html;
+        } else if (typeof html !== 'undefined') {
+            console.error(`Component '${name}' returned invalid value: `, html);
+        }
         hydrate(props.$el);
         return html;
     };
@@ -50,8 +54,8 @@ export function Component
                 props[propName] = execute(this.getAttribute(attr) || 'undefined', this);
             }
 
-            await addComponentToDOM(props);
             this.classList.add('reservoir-container');
+            await addComponentToDOM(props);
         }
     }
 
