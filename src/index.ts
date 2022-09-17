@@ -1,6 +1,6 @@
 import { waitForDocumentReady } from "./utils";
 import * as globals from './globals';
-import { get, loadFromLocalStorage, set, setDefaults, waitForLoaded, setFromObj } from "./hydrate";
+import { get, loadFromLocalStorage, set, setDefaults, waitForLoaded, setFromObj, hydrate } from "./hydrate";
 import { Component } from "./components";
 import { preloadSVGs } from "./svgs";
 
@@ -37,7 +37,8 @@ const reservoir = {
     setLocalStorageKey: globals.setLocalStorageKey,
     reservoir: {},
     errors: globals.errors,
-    performance: globals.perf
+    performance: globals.perf,
+    reload: hydrate
 };
 
 reservoir.reservoir = reservoir;
@@ -56,6 +57,7 @@ export {
 export const setLocalStorageKey = globals.setLocalStorageKey;
 export const errors = globals.errors;
 export const performance = globals.perf;
+export const reload = hydrate;
 
 window.reservoir = reservoir;
 export default reservoir;
