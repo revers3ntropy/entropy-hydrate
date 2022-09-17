@@ -1,6 +1,6 @@
 import { El, IProps } from "./types";
 import { getComponentId, waitForDocumentReady } from "./utils";
-import { hydrate } from "./hydrate";
+import { execute, hydrate } from "./hydrate";
 
 export function Component
 <Props extends IProps>
@@ -47,7 +47,7 @@ export function Component
             for (let attr of this.getAttributeNames()) {
                 // convert kebab-case to camelCase
                 const propName = attr.replace(/-./g, x => x[1].toUpperCase());
-                props[propName] = this.getAttribute(attr);
+                props[propName] = execute(this.getAttribute(attr) || 'undefined', this);
             }
 
             await addComponentToDOM(props);

@@ -101,11 +101,12 @@ export function get(key: string) {
     return current;
 }
 
-export function execute(key: string, $el: El): any {
+export function execute(key: string, $el: El | null, parameters: Record<string, any> = {}): any {
     const initialData = JSON.stringify(globals.data);
 
-    const parameters = {
+    parameters = {
         ...globals.data,
+        ...parameters
     };
 
     let parent: El | null = $el;
@@ -114,7 +115,7 @@ export function execute(key: string, $el: El): any {
             const key = attr.split('.', 2)[1];
             const attrValue = parent.getAttribute(attr);
             if (attrValue === null) continue;
-            const value = execute(attrValue, parent);
+            const value = execute(attrValue, parent.parentElement, parameters);
             if (value === globals.executeError) continue;
             parameters[key] = value;
         }

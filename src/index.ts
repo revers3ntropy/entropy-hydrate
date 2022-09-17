@@ -2,7 +2,6 @@ import { waitForDocumentReady } from "./utils";
 import * as globals from './globals';
 import { get, loadFromLocalStorage, set, setDefaults, waitForLoaded, setFromObj } from "./hydrate";
 import { Component } from "./components";
-import { setLocalStorageKey } from "./globals";
 import { preloadSVGs } from "./svgs";
 
 export interface IInitConfig {
@@ -14,14 +13,14 @@ export interface IInitConfig {
 async function init({
     rootPath = '.',
     localStorageKey,
-    svgs = [],
-}: IInitConfig ={}) {
+    svgs = []
+}: IInitConfig = {}) {
     preloadSVGs(...svgs);
     await waitForDocumentReady();
 
     globals.setRootPath(rootPath);
     if (localStorageKey) {
-        setLocalStorageKey(localStorageKey);
+        globals.setLocalStorageKey(localStorageKey);
     }
     loadFromLocalStorage(true);
 }
@@ -35,8 +34,13 @@ const reservoir = {
     get,
     loadFromLocalStorage,
     waitForLoaded,
-    setLocalStorageKey
+    setLocalStorageKey: globals.setLocalStorageKey,
+    reservoir: {},
+    errors: globals.errors,
+    performance: globals.perf
 };
+
+reservoir.reservoir = reservoir;
 
 export {
     Component,
@@ -47,9 +51,11 @@ export {
     get,
     reservoir,
     loadFromLocalStorage,
-    waitForLoaded,
-    setLocalStorageKey
+    waitForLoaded
 };
+export const setLocalStorageKey = globals.setLocalStorageKey;
+export const errors = globals.errors;
+export const performance = globals.perf;
 
 window.reservoir = reservoir;
 export default reservoir;

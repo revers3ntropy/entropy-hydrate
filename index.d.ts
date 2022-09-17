@@ -3,13 +3,12 @@
 declare module 'hydrate-web' {
     import { get, loadFromLocalStorage, set, setDefaults, waitForLoaded, setFromObj } from "hydrate-web/src/hydrate";
     import { Component } from "hydrate-web/src/components";
-    import { setLocalStorageKey } from "hydrate-web/src/globals";
     export interface IInitConfig {
         rootPath?: string;
         localStorageKey?: string;
         svgs?: string[];
     }
-    function init({ rootPath, localStorageKey, svgs, }?: IInitConfig): Promise<void>;
+    function init({ rootPath, localStorageKey, svgs }?: IInitConfig): Promise<void>;
     const reservoir: {
         Component: typeof Component;
         init: typeof init;
@@ -20,8 +19,14 @@ declare module 'hydrate-web' {
         loadFromLocalStorage: typeof loadFromLocalStorage;
         waitForLoaded: typeof waitForLoaded;
         setLocalStorageKey: (key: string) => string;
+        reservoir: {};
+        errors: [string, Error][];
+        performance: import("./types").IPerfData;
     };
-    export { Component, init, setFromObj, setDefaults, set, get, reservoir, loadFromLocalStorage, waitForLoaded, setLocalStorageKey };
+    export { Component, init, setFromObj, setDefaults, set, get, reservoir, loadFromLocalStorage, waitForLoaded };
+    export const setLocalStorageKey: (key: string) => string;
+    export const errors: [string, Error][];
+    export const performance: import("./types").IPerfData;
     export default reservoir;
 }
 
@@ -34,7 +39,7 @@ declare module 'hydrate-web/src/hydrate' {
     export function setDefaults(obj: Record<string, unknown>, persist?: boolean): void;
     export function set(key: string | Record<string, unknown>, item?: unknown, persist?: boolean): void;
     export function get(key: string): any;
-    export function execute(key: string, $el: El): any;
+    export function execute(key: string, $el: El | null, parameters?: Record<string, any>): any;
     export function has(key: string): boolean;
     export function hydrate($el?: ElRaw): void;
 }
@@ -42,22 +47,6 @@ declare module 'hydrate-web/src/hydrate' {
 declare module 'hydrate-web/src/components' {
     import { IProps } from "hydrate-web/src/types";
     export function Component<Props extends IProps>(name: string, cb: (props: Readonly<Props>) => string): (props: Props) => Promise<string>;
-}
-
-declare module 'hydrate-web/src/globals' {
-    import type { IPerfData } from "hydrate-web/src/types";
-    export let ROOT_PATH: string;
-    export const setRootPath: (path: string) => string;
-    export let data: Record<string, unknown>;
-    export let lsData: Record<string, unknown>;
-    export let localStorageKey: string;
-    export const setLocalStorageKey: (key: string) => string;
-    export const executeError: unique symbol;
-    export let loaded: boolean;
-    export let loadedCBs: Function[];
-    export const isLoaded: () => void;
-    export let errors: [string, Error][];
-    export const perf: IPerfData;
 }
 
 declare module 'hydrate-web/src/types' {

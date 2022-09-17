@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <title>Data Loading</title>
-    <script src="../index.js"></script>
     <script defer type="module">
+        import '../index.js';
 		await reservoir.init();
 
         const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -27,20 +27,19 @@
         `);
 
 		reservoir.set({
-			data: Array(1).fill(0).map(() => ({
+			data: Array(1000).fill(0).map(() => ({
                 text: makeText(100),
                 show: true
             }))
-		})
-
+		});
     </script>
 </head>
 <body>
 <main>
-    <p foreach="data in data">
+    <p foreach="a in data">
         <my-component
-            text="data.text"
-            show="data.show"
+            text="a.text"
+            show="a.show"
         ></my-component>
     </p>
 </main>
