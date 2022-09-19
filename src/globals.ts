@@ -1,4 +1,4 @@
-import type { El, IPerfData } from "./types";
+import { IPerfData } from "./types";
 import { ElRaw } from "./types";
 
 export let ROOT_PATH = '';

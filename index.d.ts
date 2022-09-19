@@ -32,7 +32,10 @@ declare module 'hydrate-web' {
     export { Component, init, setFromObj, setDefaults, set, get, loadFromLocalStorage, waitForLoaded, hydrate, update };
     export const setLocalStorageKey: (key: string) => string;
     export const errors: [string, Error][];
-    export const performance: import("./types").IPerfData;
+    export interface IPerfData {
+        renders: string[]
+    }
+    export const performance: IPerfData;
     export const reload: typeof hydrate;
     export const hooks: Record<globals.HookTypes, globals.Hook[]>;
     export const hook: typeof addHook;
@@ -41,7 +44,7 @@ declare module 'hydrate-web' {
 }
 
 declare module 'hydrate-web/src/globals' {
-    import type { IPerfData } from "hydrate-web/src/types";
+    import { IPerfData } from "hydrate-web/src/types";
     import { ElRaw } from "hydrate-web/src/types";
     export let ROOT_PATH: string;
     export const setRootPath: (path: string) => string;
@@ -86,7 +89,7 @@ declare module 'hydrate-web/src/hooks' {
 }
 
 declare module 'hydrate-web/src/types' {
-    import type { Reservoir } from "hydrate-web/src/index";
+    import type { Reservoir } from "hydrate-web";
     global {
         interface Window {
             children: HTMLCollection;
