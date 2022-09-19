@@ -1,8 +1,9 @@
 import { waitForDocumentReady } from "./utils";
 import * as globals from './globals';
-import { get, loadFromLocalStorage, set, setDefaults, waitForLoaded, setFromObj, hydrate } from "./hydrate";
+import { get, loadFromLocalStorage, set, setDefaults, waitForLoaded, setFromObj, hydrate, update } from "./hydrate";
 import { Component } from "./components";
 import { preloadSVGs } from "./svgs";
+import { addHook } from "./hooks";
 
 export interface IInitConfig {
     rootPath?: string;
@@ -25,7 +26,46 @@ async function init({
     loadFromLocalStorage(true);
 }
 
-const reservoir = {
+export interface Reservoir {
+    Component: typeof Component;
+    init: typeof init;
+    setFromObj: typeof setFromObj;
+    setDefaults: typeof setDefaults;
+    set: typeof set;
+    get: typeof get;
+    update: typeof update,
+    loadFromLocalStorage: typeof loadFromLocalStorage;
+    waitForLoaded: typeof waitForLoaded;
+    setLocalStorageKey: typeof globals.setLocalStorageKey;
+    errors: typeof globals.errors;
+    performance: typeof globals.perf;
+    reload: typeof hydrate;
+    hydrate: typeof hydrate;
+    hooks: typeof globals.hooks;
+    hook: typeof addHook;
+}
+
+export {
+    Component,
+    init,
+    setFromObj,
+    setDefaults,
+    set,
+    get,
+    loadFromLocalStorage,
+    waitForLoaded,
+    hydrate,
+    update
+};
+export const setLocalStorageKey = globals.setLocalStorageKey;
+export const errors = globals.errors;
+export const performance = globals.perf;
+export const reload = hydrate;
+export const hooks = globals.hooks;
+export const hook = addHook;
+
+
+const reservoir: Reservoir = {
     Component,
     init,
     setFromObj,
@@ -35,29 +75,14 @@ const reservoir = {
     loadFromLocalStorage,
     waitForLoaded,
     setLocalStorageKey: globals.setLocalStorageKey,
-    reservoir: {},
     errors: globals.errors,
     performance: globals.perf,
-    reload: hydrate
+    reload: hydrate,
+    hydrate,
+    hooks: globals.hooks,
+    hook: addHook,
+    update
 };
-
-reservoir.reservoir = reservoir;
-
-export {
-    Component,
-    init,
-    setFromObj,
-    setDefaults,
-    set,
-    get,
-    reservoir,
-    loadFromLocalStorage,
-    waitForLoaded
-};
-export const setLocalStorageKey = globals.setLocalStorageKey;
-export const errors = globals.errors;
-export const performance = globals.perf;
-export const reload = hydrate;
 
 window.reservoir = reservoir;
 export default reservoir;

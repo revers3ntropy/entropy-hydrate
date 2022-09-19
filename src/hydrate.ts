@@ -2,6 +2,7 @@ import * as globals from "./globals";
 import { El, ElRaw } from "./types";
 import { attrsStartWith, escapeHTML } from "./utils";
 import { loadSVG } from "./svgs";
+import reservoir from "./index";
 
 export function loadFromLocalStorage(shouldHydrate = true) {
     const data = getFromLS();
@@ -66,6 +67,10 @@ export function setDefaults (obj: Record<string, unknown>, persist=false) {
     }
 }
 
+export function update(value: string, updater: (value: unknown) => unknown) {
+    set(value, updater(get(value)));
+}
+
 export function set(key: string | Record<string, unknown>, item?: unknown, persist = false) {
     if (typeof key === 'object') {
         setFromObj(key, !!item);
@@ -105,6 +110,7 @@ export function execute(key: string, $el: El | null, parameters: Record<string, 
     const initialData = JSON.stringify(globals.data);
 
     parameters = {
+        ...reservoir,
         ...globals.data,
         ...parameters
     };
@@ -158,6 +164,10 @@ export function has(key: string) {
 export function hydrate($el: ElRaw = document) {
     const start = performance.now();
 
+    for (let hook of globals.hooks['preHydrate']) {
+        hook($el);
+    }
+
     if ($el instanceof Element) {
         if ($el.hasAttribute('hidden') || $el.hasAttribute('hidden-dry')) {
             if (!hydrateIf($el)) {
@@ -209,6 +219,10 @@ export function hydrate($el: ElRaw = document) {
 
     if ($el === document) {
         globals.perf.renders.push(`Hydrated document in ${performance.now() - start}ms: ${new Error().stack}`);
+    }
+
+    for (let hook of globals.hooks['postHydrate']) {
+        hook($el);
     }
 }
 

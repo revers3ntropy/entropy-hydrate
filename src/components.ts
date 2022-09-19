@@ -1,6 +1,7 @@
 import { El, IProps } from "./types";
 import { getComponentId, waitForDocumentReady } from "./utils";
 import { execute, hydrate } from "./hydrate";
+import * as globals from './globals';
 
 export function Component
 <Props extends IProps>
@@ -43,7 +44,9 @@ export function Component
             this.reloadComponent();
         }
 
-        async reloadComponent() {
+        reloadComponent() {
+            const start = performance.now();
+
             const props: rawProps = {
                 $el: this
             } as any;
@@ -55,7 +58,9 @@ export function Component
             }
 
             this.classList.add('reservoir-container');
-            await addComponentToDOM(props);
+            addComponentToDOM(props);
+
+            globals.perf.renders.push(`'${name}' rendered in ${performance.now() - start}ms`);
         }
     }
 

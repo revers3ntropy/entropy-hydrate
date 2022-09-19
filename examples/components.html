@@ -3,15 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <title>Components</title>
-    <script src="../index.js"></script>
     <script defer type="module">
+        import '../index.js';
+
         await reservoir.init();
-        reservoir.set('state', { clicks: 0 });
+        reservoir.set('clicks', 0);
 
         const MyButton = reservoir.Component('my-button', ({ text, bgColor }) => `
             <button
                 style="background-color: ${bgColor}"
-                bind.click="console.log(state.clicks++)"
+                bind.click="update('clicks', x => x + 1)"
             >
                 ${text}
             </button>
@@ -24,7 +25,7 @@
 <main>
     <my-button text="'Click Me!'" bg-color="'yellow'"></my-button>
     <div class="insert-here"></div>
-    <p pump="state.clicks"> Clicks</p>
+    <p pump="clicks"> Clicks</p>
 </main>
 </body>
 </html>

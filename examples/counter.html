@@ -5,15 +5,16 @@
     <title>Counter</title>
     <script defer type="module">
         import '../index.js';
+
 	    await reservoir.init();
-		reservoir.set('state', { counter: 0 });
+		reservoir.set('counter', 0);
     </script>
 </head>
 <body>
 <main>
-    <button bind.click='state.counter++'>+</button>
-    <button bind.click='state.counter--'>-</button>
-    <span pump='state.counter'></span>
+    <button bind.click="update('counter', x => x + 1)">+</button>
+    <button bind.click="update('counter', x => x - 1)">-</button>
+    <span pump='counter'></span>
 </main>
 </body>
 </html>

@@ -4,10 +4,15 @@
     <meta charset="UTF-8">
     <title>Data Loading</title>
     <script defer type="module">
-        import '../index.js';
+	    const start = performance.now();
+
+	    import '../index.js';
 		await reservoir.init();
 
+		console.log(`Reservoir took ${performance.now() - start}ms to load`);
+
         const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+		const N = 500;
 
 		function makeText (length) {
 			let result  = '';
@@ -17,6 +22,7 @@
 			return result;
 		}
 
+		const beforeComponent = performance.now();
 		reservoir.Component('my-component', ({ text, show }) => `
             <p
                 hidden="${!show}"
@@ -25,13 +31,22 @@
                 ${text}
             </p>
         `);
+		console.log(`Component took ${performance.now() - beforeComponent}ms to define`);
+
+		const data = Array(N).fill(0).map(() => ({
+			text: makeText(100),
+			show: true
+		}));
+
+		const before = performance.now();
 
 		reservoir.set({
-			data: Array(1000).fill(0).map(() => ({
-                text: makeText(100),
-                show: true
-            }))
-		});
+			data
+		}, true);
+
+		const after = performance.now();
+		console.log(`Time to create ${N} elements: ${after - before}ms`);
+        console.log(`Total time: ${after - start}ms`);
     </script>
 </head>
 <body>

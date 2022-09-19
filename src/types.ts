@@ -1,11 +1,9 @@
+import type { Reservoir } from "./index";
+
 declare global {
     interface Window {
-        reservoir: Reservoir;
         children: HTMLCollection;
-    }
-
-    interface Reservoir {
-        [key: string]: any;
+        reservoir: Reservoir;
     }
 }
 

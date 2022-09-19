@@ -1,4 +1,5 @@
-import type { IPerfData } from "./types";
+import type { El, IPerfData } from "./types";
+import { ElRaw } from "./types";
 
 export let ROOT_PATH = '';
 export const setRootPath = (path: string) => ROOT_PATH = path;
@@ -22,4 +23,13 @@ export let errors: [string, Error][] = [];
 
 export const perf: IPerfData = {
     renders: []
+};
+
+export type Hook  = ($el: ElRaw) => void;
+
+export type HookTypes = 'preHydrate' | 'postHydrate';
+
+export const hooks: Record<HookTypes, Hook[]> = {
+    'preHydrate': [],
+    'postHydrate': []
 };
