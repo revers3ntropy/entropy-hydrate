@@ -13,6 +13,10 @@ export function Component
     const addComponentToDOM = async (props: rawProps): Promise<unknown> => {
         await waitForDocumentReady();
 
+        if (!('$el' in props) || typeof props.$el === 'undefined') {
+            props.$el = document.body;
+        }
+
         if (typeof props.$el === 'string') {
             const el = document.querySelector(props.$el);
             if (!el) throw `Cannot find element to register component: '${props.$el}'`;

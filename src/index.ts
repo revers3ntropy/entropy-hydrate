@@ -1,9 +1,10 @@
 import { waitForDocumentReady } from "./utils";
-import * as globals from './globals';
 import { get, loadFromLocalStorage, set, setDefaults, waitForLoaded, setFromObj, hydrate, update } from "./hydrate";
 import { Component } from "./components";
 import { preloadSVGs } from "./svgs";
 import { addHook } from "./hooks";
+import { components } from './components/index';
+import { perf, setRootPath, setLocalStorageKey, errors, hooks } from "./globals";
 
 export interface IInitConfig {
     rootPath?: string;
@@ -19,9 +20,9 @@ async function init({
     preloadSVGs(...svgs);
     await waitForDocumentReady();
 
-    globals.setRootPath(rootPath);
+    setRootPath(rootPath);
     if (localStorageKey) {
-        globals.setLocalStorageKey(localStorageKey);
+        setLocalStorageKey(localStorageKey);
     }
     loadFromLocalStorage(true);
 }
@@ -36,13 +37,14 @@ export interface Reservoir {
     update: typeof update,
     loadFromLocalStorage: typeof loadFromLocalStorage;
     waitForLoaded: typeof waitForLoaded;
-    setLocalStorageKey: typeof globals.setLocalStorageKey;
-    errors: typeof globals.errors;
-    performance: typeof globals.perf;
+    setLocalStorageKey: typeof setLocalStorageKey;
+    errors: typeof errors;
+    performance: typeof perf;
     reload: typeof hydrate;
     hydrate: typeof hydrate;
-    hooks: typeof globals.hooks;
+    hooks: typeof hooks;
     hook: typeof addHook;
+    components: typeof components;
 }
 
 export {
@@ -55,15 +57,14 @@ export {
     loadFromLocalStorage,
     waitForLoaded,
     hydrate,
-    update
+    update,
+    components,
+    setLocalStorageKey,
+    errors,
+    hooks
 };
-export const setLocalStorageKey = globals.setLocalStorageKey;
-export const errors = globals.errors;
-export const performance = globals.perf;
 export const reload = hydrate;
-export const hooks = globals.hooks;
 export const hook = addHook;
-
 
 const reservoir: Reservoir = {
     Component,
@@ -74,14 +75,15 @@ const reservoir: Reservoir = {
     get,
     loadFromLocalStorage,
     waitForLoaded,
-    setLocalStorageKey: globals.setLocalStorageKey,
-    errors: globals.errors,
-    performance: globals.perf,
+    setLocalStorageKey,
+    errors,
+    performance: perf,
     reload: hydrate,
     hydrate,
-    hooks: globals.hooks,
+    hooks,
     hook: addHook,
-    update
+    update,
+    components
 };
 
 window.reservoir = reservoir;

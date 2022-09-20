@@ -41,7 +41,7 @@
 		const before = performance.now();
 
 		reservoir.set({
-			data
+			testData: data
 		}, true);
 
 		const after = performance.now();
@@ -51,7 +51,7 @@
 </head>
 <body>
 <main>
-    <p foreach="a in data">
+    <p foreach="a in testData">
         <my-component
             text="a.text"
             show="a.show"

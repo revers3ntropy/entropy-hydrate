@@ -14,8 +14,7 @@
         "experimentalDecorators": true,
         "forceConsistentCasingInFileNames": true,
         "esModuleInterop": true,
-        "strictFunctionTypes": true,
-        "declaration": true
+        "strictFunctionTypes": true
     },
     "include": [
         "src/**/*"

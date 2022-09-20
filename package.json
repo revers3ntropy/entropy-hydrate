@@ -1,6 +1,6 @@
 {
   "name": "hydrate-web",
-  "version": "0.0.12",
+  "version": "0.0.13",
   "description": "Very lightweight web framework",
   "main": "index.js",
   "type": "module",
@@ -9,7 +9,7 @@
     "setup": "npm i; npm install dts-bundle -g; npm run build",
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "webpack; npm run build:types; npm run build:styles",
-    "build:types": "dts-bundle --baseDir . --name hydrate-web --main src/index.d.ts --out ./index.d.ts; rm -rf ./src/*.d.ts",
+    "build:types": "dts-bundle-generator -o index.d.ts ./src/index.ts",
     "build:styles": "lessc -clean-css index.less index.css"
   },
   "author": "revers3ntropy",

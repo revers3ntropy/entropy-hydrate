@@ -11,7 +11,7 @@
 
         const MyButton = reservoir.Component('my-button', ({ text, bgColor }) => `
             <button
-                style="background-color: ${bgColor}"
+                style="background-color: ${bgColor}; border: none; padding: 4px; margin: 4px;"
                 bind.click="update('clicks', x => x + 1)"
             >
                 ${text}
