@@ -12,10 +12,18 @@
 <main>
     <form>
         <label>
+            <!--
+                the 'bind-persist' attribute will save the value of the input in
+                local storage, which then gets loaded when the page is reloaded.
+                Note that this data is now available to every page, as it is simply
+                in the global localStorage context, however it won't override
+                `localStorage.name`, it is stored in a global 'reservoir' key.
+            -->
             <input bind="name" bind-persist>
         </label>
         <hr>
         <label>
+            <!-- Works with any element that has a 'value' property -->
             <textarea bind="data" bind-persist></textarea>
         </label>
     </form>

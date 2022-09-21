@@ -67,8 +67,8 @@ export function setDefaults (obj: Record<string, unknown>, persist=false) {
     }
 }
 
-export function update(value: string, updater: (value: unknown) => unknown) {
-    set(value, updater(get(value)));
+export function update(value: string, updater: (value: unknown) => unknown, persist=false) {
+    set(value, updater(get(value)), persist);
 }
 
 export function set(key: string | Record<string, unknown>, item?: unknown, persist = false) {
@@ -323,7 +323,12 @@ function bindListener($el: El, name: string) {
         return;
     }
 
-    if ($el.trackedEvents?.[`bind.${name}`]) {
+    if (!$el.__Hydrate_trackedEvents) {
+        $el.__Hydrate_trackedEvents = {};
+    }
+
+    // if we've already bound this event, don't bind it again
+    if ($el.__Hydrate_trackedEvents[`bind.${name}`]) {
         return;
     }
 
@@ -334,11 +339,8 @@ function bindListener($el: El, name: string) {
 
     $el.addEventListener(name, handler);
 
-    if (!$el.trackedEvents) {
-        $el.trackedEvents = {};
-    }
-
-    $el.trackedEvents[`bind.${name}`] = handler;
+    // can be any truthy value
+    $el.__Hydrate_trackedEvents[`bind.${name}`] = handler;
 }
 
 function hydrateAttribute($el: El, attrName: string) {

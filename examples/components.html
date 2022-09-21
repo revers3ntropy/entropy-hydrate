@@ -9,6 +9,12 @@
         await reservoir.init();
         reservoir.set('clicks', 0);
 
+		// create component and assign to variable, giving it the <my-button> tag
+        // content is the innerHTML of the component
+        // bgColor is a prop that can be passed using an attribute on the html tag,
+        // which is interpreted as JS
+        // This component returns a string, which is then assigned to the innerHTML
+        // of the <my-button> tag
         const MyButton = reservoir.Component('my-button', ({ bgColor, content }) => `
             <button
                 style="background-color: ${bgColor}; border: none; padding: 4px; margin: 4px;"
@@ -18,9 +24,17 @@
             </button>
         `);
 
+		// Create another component, called 'my-container'
+        // This time, we create a new DOM node on every render,
+        // and add it as a direct dependent of 'body'
         reservoir.Component('my-container', ({ content }) => {
+			// generate a new dom node on every render,
+            // however as this component is only rendered once on the page load,
+            // only one dom node is created.
 			const $c = document.createElement('div');
 
+			// directly set the inner html, not generally recommended as it
+            // is a security risk, but in this case it is fine
 	        $c.innerHTML = `
                 <div style=" border: 1px solid grey; padding: 20px">
                     ${content}
@@ -29,12 +43,24 @@
 
 	        document.body.appendChild($c);
 
+	        reservoir.reload($c);
+
+	        // return an empty string so the content of the original <my-container>
+            // tag is not rendered
 			return '';
         });
 
+		// `setTimeout` so that this action is added at the end of the call stack,
+        // meaning the parent component 'my-container' will be rendered first
+        // and the child component 'my-button' is added to the DOM.
         setTimeout(() => {
-	        MyButton({ $el: '.insert-here', content: 'Click Me As Well!', bgColor: 'lightblue' });
-        }, 20);
+	        // only renders once, so this content is static
+	        MyButton({
+		        $el: '.insert-here',
+		        content: 'Click Me As Well!',
+		        bgColor: 'lightblue'
+	        });
+        }, 0);
     </script>
 </head>
 <body>

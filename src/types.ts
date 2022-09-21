@@ -7,7 +7,12 @@ declare global {
     }
 }
 
-export type El = (Element) & { reloadComponent?: Function, trackedEvents?: Record< string, () => any> };
+export interface IExtraElProperties {
+    reloadComponent?: Function;
+    __Hydrate_trackedEvents?: Record< string, () => any>;
+}
+
+export type El = Element & IExtraElProperties ;
 export type ElRaw = El | HTMLElement | Document | Window;
 
 export interface IPerfData {

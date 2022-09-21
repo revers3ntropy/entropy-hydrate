@@ -5,9 +5,9 @@
     <title>Data Loading</title>
     <script defer type="module">
         import '../index.js';
-
 		await reservoir.init();
 
+		// this mimics something like an API call
 		function getSomeExpensiveData() {
 			return new Promise(resolve => {
 				setTimeout(() => {
@@ -16,6 +16,7 @@
 			});
 		}
 
+		// set the data after waiting for it to load
 		reservoir.set({
             myData: await getSomeExpensiveData()
 		});
