@@ -1,4 +1,5 @@
 import { El } from "./types";
+import {TEMP_ATTRS} from "./globals";
 
 let currentComponentId = 0;
 export function getComponentId() {
@@ -42,4 +43,11 @@ export function attrsStartWith($el: El, start: string): string[] {
         }
     }
     return result;
+}
+
+export function cloneHTML (html: string) {
+    for (const a of TEMP_ATTRS) {
+        html = html.replace(a, '');
+    }
+    return html;
 }

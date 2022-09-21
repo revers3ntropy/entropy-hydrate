@@ -2,8 +2,9 @@
 
 export declare type El = (Element) & {
 	reloadComponent?: Function;
+	trackedEvents?: Record<string, () => any>;
 };
-export declare type ElRaw = Element | HTMLElement | Document | Window;
+export declare type ElRaw = El | HTMLElement | Document | Window;
 export interface IPerfData {
 	renders: string[];
 }

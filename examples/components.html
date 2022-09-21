@@ -18,14 +18,32 @@
             </button>
         `);
 
-        MyButton({ $el: '.insert-here', content: 'Click Me As Well!', bgColor: 'lightblue' });
+        reservoir.Component('my-container', ({ content }) => {
+			const $c = document.createElement('div');
+
+	        $c.innerHTML = `
+                <div style=" border: 1px solid grey; padding: 20px">
+                    ${content}
+                </div>
+            `;
+
+	        document.body.appendChild($c);
+
+			return '';
+        });
+
+        setTimeout(() => {
+	        MyButton({ $el: '.insert-here', content: 'Click Me As Well!', bgColor: 'lightblue' });
+        }, 20);
     </script>
 </head>
 <body>
 <main>
-    <my-button bg-color="'yellow'">Click Me!</my-button>
-    <div class="insert-here"></div>
-    <p pump="clicks"> Clicks</p>
+    <my-container>
+        <my-button bg-color="'yellow'">Click Me!</my-button>
+        <div class="insert-here"></div>
+        <p pump="clicks"> Clicks</p>
+    </my-container>
 </main>
 </body>
 </html>

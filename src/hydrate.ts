@@ -291,7 +291,7 @@ function bind($el: El | HTMLInputElement) {
     if (key === null || !key) return;
     if (persist === undefined) return;
 
-    if (!$el.getAttribute('bound')) {
+    if (!$el.getAttribute('__Hydrate_bound')) {
 
         function update() {
             if (!key) return;
@@ -307,7 +307,7 @@ function bind($el: El | HTMLInputElement) {
         $el.addEventListener('click', update);
     }
 
-    $el.setAttribute('bound', 'true');
+    $el.setAttribute('__Hydrate_bound', 'true');
 
     if (has(key)) {
         $el.value = get(key);
@@ -318,17 +318,27 @@ function bind($el: El | HTMLInputElement) {
 
 function bindListener($el: El, name: string) {
     const onEvent = $el.getAttribute(`bind.${name}`);
-    if (!onEvent) return;
-
-    if ($el.hasAttribute(`bound-${name}`)) {
+    if (!onEvent) {
+        console.error(`Cannot find executor for bind.${name}`);
         return;
     }
 
-    $el.setAttribute(`bound-${name}`, 'true');
+    if ($el.trackedEvents?.[`bind.${name}`]) {
+        return;
+    }
 
-    $el.addEventListener(name, () => {
+    function handler () {
+        if (!onEvent) return;
         execute(onEvent, $el);
-    });
+    }
+
+    $el.addEventListener(name, handler);
+
+    if (!$el.trackedEvents) {
+        $el.trackedEvents = {};
+    }
+
+    $el.trackedEvents[`bind.${name}`] = handler;
 }
 
 function hydrateAttribute($el: El, attrName: string) {
