@@ -10,7 +10,8 @@ export const LoadData = Component<{
     response?: ResponseType,
     id: number,
     $el: El,
-    to: string
+    to: string,
+    content: string
 }>('load-data', async ({
     src, options={}, to, response = 'text'
 }) => {

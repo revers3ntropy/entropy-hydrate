@@ -10,6 +10,7 @@ export interface IPerfData {
 export interface IProps {
 	id: number;
 	$el: El;
+	content: string;
 	[key: string]: any;
 }
 export declare function loadFromLocalStorage(shouldHydrate?: boolean): void;
@@ -20,7 +21,7 @@ export declare function update(value: string, updater: (value: unknown) => unkno
 export declare function set(key: string | Record<string, unknown>, item?: unknown, persist?: boolean): void;
 export declare function get(key: string): any;
 export declare function hydrate($el?: ElRaw): void;
-export declare function Component<Props extends IProps>(name: string, cb: (props: Readonly<Props>) => unknown): (props: Props) => Promise<unknown>;
+export declare function Component<Props>(name: string, cb: (props: Readonly<Props & IProps>) => unknown): (props: Props & IProps) => Promise<unknown>;
 export declare const setLocalStorageKey: (key: string) => string;
 export declare let errors: [
 	string,
@@ -41,7 +42,8 @@ export declare const components: {
 		id: number;
 		$el: El;
 		to: string;
-	}) => Promise<unknown>;
+		content: string;
+	} & IProps) => Promise<unknown>;
 };
 export interface IInitConfig {
 	rootPath?: string;

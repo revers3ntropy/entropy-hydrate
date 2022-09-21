@@ -9,21 +9,21 @@
         await reservoir.init();
         reservoir.set('clicks', 0);
 
-        const MyButton = reservoir.Component('my-button', ({ text, bgColor }) => `
+        const MyButton = reservoir.Component('my-button', ({ bgColor, content }) => `
             <button
                 style="background-color: ${bgColor}; border: none; padding: 4px; margin: 4px;"
                 bind.click="update('clicks', x => x + 1)"
             >
-                ${text}
+                ${content}
             </button>
         `);
 
-        MyButton({ $el: '.insert-here', text: 'Click Me As Well!', bgColor: 'lightblue' });
+        MyButton({ $el: '.insert-here', content: 'Click Me As Well!', bgColor: 'lightblue' });
     </script>
 </head>
 <body>
 <main>
-    <my-button text="'Click Me!'" bg-color="'yellow'"></my-button>
+    <my-button bg-color="'yellow'">Click Me!</my-button>
     <div class="insert-here"></div>
     <p pump="clicks"> Clicks</p>
 </main>

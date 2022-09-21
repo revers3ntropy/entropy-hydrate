@@ -4,17 +4,17 @@ import { execute, hydrate } from "./hydrate";
 import * as globals from './globals';
 
 export function Component
-<Props extends IProps>
-(name: string, cb: (props: Readonly<Props>) => unknown):
-    (props: Props) => Promise<unknown>
+<Props>
+(name: string, cb: (props: Readonly<Props & IProps>) => unknown):
+    (props: Props & IProps) => Promise<unknown>
 {
-    type rawProps = { $el: string | El, id?: number, [k: string]: any };
+    type rawProps = { $el: string | El, id?: number, content?: string } & Record<string, any>;
 
     const addComponentToDOM = async (props: rawProps): Promise<unknown> => {
         await waitForDocumentReady();
 
         if (!('$el' in props) || typeof props.$el === 'undefined') {
-            props.$el = document.body;
+            props.$el = document.body.appendChild(document.createElement('div'));
         }
 
         if (typeof props.$el === 'string') {
@@ -27,9 +27,10 @@ export function Component
             return '';
         }
 
+        props.content ??= props.$el.innerHTML;
         props.id = getComponentId();
 
-        const html = await cb(Object.freeze(props as Props));
+        const html = await cb(Object.freeze(props as (Props & IProps)));
         if (typeof html === 'string') {
             props.$el.innerHTML = html;
         } else if (typeof html !== 'undefined') {

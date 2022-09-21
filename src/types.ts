@@ -17,5 +17,6 @@ export interface IPerfData {
 export interface IProps {
     id: number;
     $el: El;
+    content: string;
     [key: string]: any;
 }
