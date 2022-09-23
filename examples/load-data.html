@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Load Data</title>
+  <script defer type="module">
+    import '../index.js';
+    await reservoir.init();
+  </script>
+  <load-data src="'assets/mock-api.json'" response="'json'" to="'data'"></load-data>
+</head>
+<body>
+<main>
+  <p foreach="element in data.data">
+      <span pump="element.a"></span>
+  </p>
+
+  <load-data src="'assets/mock-api.json'" response="'json'" to="'other_data'">
+    <span pump="JSON.stringify(other_data)"></span>
+  </load-data>
+
+  <!--
+    doesn't get rendered as other_data is scoped to the load-data component,
+    but only when the component has content
+  -->
+  <p pump="JSON.stringify(other_data)"></p>
+</main>
+</body>
+</html>

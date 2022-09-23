@@ -13,7 +13,7 @@ export const LoadData = Component<{
     to: string,
     content: string
 }>('load-data', async ({
-    src, options={}, to, response = 'text'
+    src, options={}, to, response = 'text', content, $el
 }) => {
     if (typeof src !== 'string' || !src) {
         console.error('Invalid URL: ', src);
@@ -48,5 +48,10 @@ export const LoadData = Component<{
             return console.error('Invalid response type');
     }
 
-    set(to, value);
+    if (!content.trim()) {
+        set(to, value);
+    } else {
+        $el.setAttribute(`pour.${to}`, JSON.stringify(value));
+        return content;
+    }
 });
