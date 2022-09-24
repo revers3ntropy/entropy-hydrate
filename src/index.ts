@@ -1,10 +1,11 @@
 import { waitForDocumentReady } from "./utils";
-import { get, loadFromLocalStorage, set, setDefaults, waitForLoaded, setFromObj, hydrate, update } from "./hydrate";
+import { waitForLoaded, hydrate } from "./hydrate";
 import { Component } from "./components";
 import { preloadSVGs } from "./svgs";
 import { addHook } from "./hooks";
 import { components } from './components/index';
 import { perf, setRootPath, setLocalStorageKey, errors, hooks } from "./globals";
+import { loadFromLocalStorage, set, setDefaults, setFromObj, update, get, has } from "./reservoir";
 
 export interface IInitConfig {
     rootPath?: string;
@@ -34,6 +35,7 @@ export interface Reservoir {
     setDefaults: typeof setDefaults;
     set: typeof set;
     get: typeof get;
+    has: typeof has;
     update: typeof update,
     loadFromLocalStorage: typeof loadFromLocalStorage;
     waitForLoaded: typeof waitForLoaded;
@@ -54,6 +56,7 @@ export {
     setDefaults,
     set,
     get,
+    has,
     loadFromLocalStorage,
     waitForLoaded,
     hydrate,
@@ -73,6 +76,7 @@ const reservoir: Reservoir = {
     setDefaults,
     set,
     get,
+    has,
     loadFromLocalStorage,
     waitForLoaded,
     setLocalStorageKey,

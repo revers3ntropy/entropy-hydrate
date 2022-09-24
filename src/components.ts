@@ -59,7 +59,13 @@ export function Component
             for (let attr of this.getAttributeNames()) {
                 // convert kebab-case to camelCase
                 const propName = attr.replace(/-./g, x => x[1].toUpperCase());
-                props[propName] = execute(this.getAttribute(attr) || 'undefined', this);
+                if (propName.startsWith('$')) {
+                    const code = this.getAttribute(attr);
+                    if (!code) throw `Invalid value for attribute '${attr}'`;
+                    props[propName.substring(1)] = execute(code, this);
+                } else {
+                    props[propName] = this.getAttribute(attr);
+                }
             }
 
             this.classList.add('reservoir-container');

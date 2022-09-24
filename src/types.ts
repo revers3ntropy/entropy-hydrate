@@ -7,10 +7,12 @@ declare global {
     }
 }
 
-export interface IExtraElProperties {
+export type IExtraElProperties = Partial<HTMLInputElement> & {
     reloadComponent?: Function;
-    __Hydrate_trackedEvents?: Record< string, () => any>;
-}
+    __Hydrate?: {
+        trackedEvents: Record<string, any>
+    };
+};
 
 export type El = Element & IExtraElProperties ;
 export type ElRaw = El | HTMLElement | Document | Window;

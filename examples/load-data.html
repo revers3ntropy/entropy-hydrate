@@ -7,23 +7,23 @@
     import '../index.js';
     await reservoir.init();
   </script>
-  <load-data src="'assets/mock-api.json'" response="'json'" to="'data'"></load-data>
+  <load-data src="assets/mock-api.json" response="json" to="mock_data"></load-data>
 </head>
 <body>
 <main>
-  <p foreach="element in data.data">
-      <span pump="element.a"></span>
+  <p foreach="element in console.log(mock_data.data), mock_data.data">
+      <span $="console.log(element), element.a"></span>
   </p>
 
-  <load-data src="'assets/mock-api.json'" response="'json'" to="'other_data'">
-    <span pump="JSON.stringify(other_data)"></span>
+  <load-data src="assets/mock-api.json" response="json" to="other_data">
+    <span $="JSON.stringify(other_data)"></span>
   </load-data>
 
   <!--
     doesn't get rendered as other_data is scoped to the load-data component,
     but only when the component has content
   -->
-  <p pump="JSON.stringify(other_data)"></p>
+  <p $="JSON.stringify(other_data)"></p>
 </main>
 </body>
 </html>

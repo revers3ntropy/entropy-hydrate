@@ -33,8 +33,3 @@ export const hooks: Record<HookTypes, Hook[]> = {
     'preHydrate': [],
     'postHydrate': []
 };
-
-export const TEMP_ATTRS = [
-    '__Hydrate_bound',
-
-]

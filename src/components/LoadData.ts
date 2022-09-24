@@ -1,6 +1,6 @@
 import { Component } from "../components";
 import { El } from "../types";
-import {set} from "../hydrate";
+import { set } from "../reservoir";
 
 export type ResponseType = 'text' | 'json';
 

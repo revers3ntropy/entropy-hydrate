@@ -3,107 +3,13 @@ import { El, ElRaw } from "./types";
 import { attrsStartWith, escapeHTML } from "./utils";
 import { loadSVG } from "./svgs";
 import reservoir from "./index";
-
-export function loadFromLocalStorage(shouldHydrate = true) {
-    const data = getFromLS();
-    for (const key in data) {
-        globals.lsData[key] = data[key];
-    }
-    for (const key in globals.lsData) {
-        globals.data[key] = globals.lsData[key];
-    }
-
-    if (shouldHydrate) {
-        hydrate();
-    }
-    globals.isLoaded();
-}
+import { get, has, set } from "./reservoir";
 
 export async function waitForLoaded () {
     return await new Promise<void>(resolve => {
         if (globals.loaded) return resolve();
         globals.loadedCBs.push(resolve);
     });
-}
-
-export function saveToLocalStorage() {
-    waitForLoaded().then(() => {
-        localStorage.setItem(globals.localStorageKey, JSON.stringify(globals.lsData));
-    });
-}
-
-export function setFromObj (obj: Record<string, unknown>, persist=false) {
-    // only update the DOM if there are changes to the state
-    let areChanges = false;
-    for (const k in obj) {
-        areChanges ||= globals.data[k] !== obj[k];
-        globals.data[k] = obj[k];
-
-        if (persist) {
-            globals.lsData[k] = obj[k];
-        }
-    }
-
-    if (areChanges) {
-        if (persist) saveToLocalStorage();
-        hydrate();
-    }
-}
-
-export function setDefaults (obj: Record<string, unknown>, persist=false) {
-    let areChanges = false;
-    for (const k in obj) {
-        areChanges ||= globals.data[k] !== obj[k];
-        globals.data[k] ??= obj[k];
-
-        if (persist) {
-            globals.lsData[k] = globals.data[k];
-        }
-    }
-
-    if (areChanges) {
-        if (persist) saveToLocalStorage();
-        hydrate();
-    }
-}
-
-export function update(value: string, updater: (value: unknown) => unknown, persist=false) {
-    set(value, updater(get(value)), persist);
-}
-
-export function set(key: string | Record<string, unknown>, item?: unknown, persist = false) {
-    if (typeof key === 'object') {
-        setFromObj(key, !!item);
-        return;
-    }
-
-    let areChanges = false;
-
-    areChanges ||= globals.data[key] !== item;
-    globals.data[key] = item;
-    if (persist) {
-        globals.lsData[key] = item;
-    }
-
-    if (areChanges) {
-        if (persist) {
-            saveToLocalStorage();
-        }
-        hydrate();
-    }
-}
-
-export function get(key: string) {
-    const path = key.split('.');
-    let current: any = globals.data;
-    for (let key of path) {
-        if (!(key in current)) {
-            globals.errors.push([key, new Error('Key not found in reservoir')]);
-            return undefined;
-        }
-        current = current[key];
-    }
-    return current;
 }
 
 export function execute(key: string, $el: El | null, parameters: Record<string, any> = {}): any {
@@ -157,10 +63,6 @@ export function execute(key: string, $el: El | null, parameters: Record<string, 
     return res;
 }
 
-export function has(key: string) {
-    return get(key) !== undefined;
-}
-
 export function hydrate($el: ElRaw = document) {
     const start = performance.now();
 
@@ -187,7 +89,7 @@ export function hydrate($el: ElRaw = document) {
             bind($el);
         }
 
-        if ($el.hasAttribute('pump')) {
+        if ($el.hasAttribute('pump') || $el.hasAttribute('$')) {
             hydrateDry($el);
         }
 
@@ -195,7 +97,11 @@ export function hydrate($el: ElRaw = document) {
             if (attr.startsWith('pump.')) {
                 hydrateAttribute($el, attr);
             } else if (attr.startsWith('bind.')) {
-                bindListener($el, attr.split('.', 2)[1]);
+                bindListener($el, attr);
+            } else if (attr.startsWith('$')) {
+                hydrateAttribute($el, attr.split('$', 2)[1]);
+            } else if (attr.startsWith('@')) {
+                bindListener($el, attr);
             }
         }
 
@@ -227,8 +133,8 @@ export function hydrate($el: ElRaw = document) {
 }
 
 function hydrateDry($el: El) {
-    const key = $el.getAttribute('pump');
-    let dry = $el.getAttribute('dry') ?? $el.innerHTML;
+    const key = $el.getAttribute('pump') || $el.getAttribute('$');
+    let dry = $el.getAttribute('__dry') ?? $el.innerHTML;
     if (!key) return;
     let value = execute(key, $el);
     if (value === globals.executeError) return;
@@ -243,28 +149,28 @@ function hydrateDry($el: El) {
 
     let html;
 
-    if ($el.hasAttribute('pump-end')) {
+    if ($el.hasAttribute('pump-end') || $el.hasAttribute('$end')) {
         html = dry + value;
-    } else if ($el.hasAttribute('pump-replace')) {
+    } else if ($el.hasAttribute('pump-replace') || $el.hasAttribute('$replace')) {
         html = value;
     } else {
         html = value + dry;
     }
 
-    if (!$el.hasAttribute('dry')) {
-        $el.setAttribute('dry', dry);
+    if (!$el.hasAttribute('__dry')) {
+        $el.setAttribute('__dry', dry);
     }
 
     $el.innerHTML = html;
 }
 
 function hydrateIf($el: El) {
-    let key = $el.getAttribute('hidden-dry');
+    let key = $el.getAttribute('__hidden-dry');
 
     if (!key) {
         key = $el.getAttribute('hidden');
         if (!key) return;
-        $el.setAttribute('hidden-dry', '');
+        $el.setAttribute('__hidden-dry', '');
     }
 
     const value = execute(key, $el);
@@ -280,34 +186,43 @@ function hydrateIf($el: El) {
     return isShown;
 }
 
-function bind($el: El | HTMLInputElement) {
-    if (!('value' in $el)) {
+function bind($el: El) {
+
+    if (!$el.__Hydrate) {
+        $el.__Hydrate = { trackedEvents: {} };
+    }
+
+    if ($el.value === undefined) {
         throw 'Cannot bind to element without value attribute';
     }
 
     const key = $el.getAttribute('bind');
-    const persist = $el.hasAttribute('bind-persist');
+    const persist = $el.hasAttribute('bind-persist') || $el.hasAttribute('persist');
 
     if (key === null || !key) return;
     if (persist === undefined) return;
 
-    if (!$el.getAttribute('__Hydrate_bound')) {
 
-        function update() {
-            if (!key) return;
-            if (!('value' in $el)) {
-                throw 'Cannot bind to element without value attribute';
-            }
-            set(key, $el.value, persist);
+    function update() {
+        if (!key) return;
+        if (!('value' in $el)) {
+            throw 'Cannot bind to element without value attribute';
         }
-
-        $el.addEventListener('change', update);
-        $el.addEventListener('keyup', update);
-        $el.addEventListener('keydown', update);
-        $el.addEventListener('click', update);
+        set(key, $el.value, persist);
     }
 
-    $el.setAttribute('__Hydrate_bound', 'true');
+    const bindUpdateEvents = ['input', 'change', 'blur', 'keyup', 'keydown', 'keypress',
+        'click', 'touchstart', 'touchend', 'touchmove', 'touchcancel'];
+
+    for (let event of bindUpdateEvents) {
+        if ($el.__Hydrate.trackedEvents[event]) continue;
+
+        $el.__Hydrate.trackedEvents[event] = update;
+        $el.addEventListener(event, update, {
+            passive: true,
+            capture: false
+        });
+    }
 
     if (has(key)) {
         $el.value = get(key);
@@ -316,19 +231,28 @@ function bind($el: El | HTMLInputElement) {
     }
 }
 
-function bindListener($el: El, name: string) {
-    const onEvent = $el.getAttribute(`bind.${name}`);
-    if (!onEvent) {
-        console.error(`Cannot find executor for bind.${name}`);
+function bindListener($el: El, attr: string) {
+    if (attr === '@') {
         return;
     }
 
-    if (!$el.__Hydrate_trackedEvents) {
-        $el.__Hydrate_trackedEvents = {};
+    if (!$el.hasAttribute(attr)) {
+        console.error(`Cannot find executor for ${attr}`);
+        return;
+    }
+
+    const onEvent = $el.getAttribute(attr);
+    if (onEvent === '') return;
+    if (onEvent === null) {
+        throw `Cannot find executor for ${attr}`;
+    }
+
+    if (!$el.__Hydrate) {
+        $el.__Hydrate = { trackedEvents: {} };
     }
 
     // if we've already bound this event, don't bind it again
-    if ($el.__Hydrate_trackedEvents[`bind.${name}`]) {
+    if ($el.__Hydrate.trackedEvents[attr]) {
         return;
     }
 
@@ -337,10 +261,19 @@ function bindListener($el: El, name: string) {
         execute(onEvent, $el);
     }
 
+    let name;
+    if (attr.startsWith('bind.')) {
+        name = attr.substring(5);
+    } else if (attr.startsWith('@')) {
+        name = attr.substring(1);
+    } else {
+        throw `Invalid listener attribute '${attr}'`;
+    }
+
     $el.addEventListener(name, handler);
 
     // can be any truthy value
-    $el.__Hydrate_trackedEvents[`bind.${name}`] = handler;
+    $el.__Hydrate.trackedEvents[attr] = handler;
 }
 
 function hydrateAttribute($el: El, attrName: string) {
@@ -412,22 +345,4 @@ function hydrateFor($el: El) {
     if (!$el.hasAttribute('foreach-dry')) {
         $el.setAttribute('foreach-dry', dry);
     }
-}
-
-function getFromLS (): Record<string, unknown> {
-    const lsDataRaw = localStorage.getItem(globals.localStorageKey) ?? '{}';
-    let lsData;
-
-    try {
-        lsData = JSON.parse(lsDataRaw);
-    } catch (E) {
-        console.error('Error parsing reservoir data from local storage: ', lsDataRaw, ' | threw: ', E);
-        lsData = {};
-    }
-
-    if (typeof lsData !== 'object' || Array.isArray(lsData) || lsData === null) {
-        console.error('Error parsing reservoir data from local storage - must be object');
-        lsData = {};
-    }
-    return lsData;
 }
