@@ -1,7 +1,7 @@
-# hydrate
+# Entropy Hydrate
 
-Very lightweight web framework
+Lightweight web framework.
 
-[GitHub repo](https://github.com/revers3ntropy/hydrate)
+[GitHub repo](https://github.com/Entropy-Games/entropy-hydrate)
 
-[NPM Package](https://www.npmjs.com/package/hydrate-web)
+[NPM Package](https://www.npmjs.com/package/entropy-hydrate)
