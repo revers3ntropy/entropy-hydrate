@@ -4,24 +4,21 @@ import { Component } from "./components";
 import { preloadSVGs } from "./svgs";
 import { addHook } from "./hooks";
 import { components } from './components/index';
-import { perf, setRootPath, setLocalStorageKey, errors, hooks } from "./globals";
+import { perf, setLocalStorageKey, errors, hooks } from "./globals";
 import { loadFromLocalStorage, set, setDefaults, setFromObj, update, get, has } from "./reservoir";
 
 export interface IInitConfig {
-    rootPath?: string;
     localStorageKey?: string;
     svgs?: string[];
 }
 
 async function init({
-    rootPath = '.',
     localStorageKey,
     svgs = []
 }: IInitConfig = {}) {
     preloadSVGs(...svgs);
     await waitForDocumentReady();
 
-    setRootPath(rootPath);
     if (localStorageKey) {
         setLocalStorageKey(localStorageKey);
     }

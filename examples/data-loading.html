@@ -26,13 +26,18 @@
 <main>
     <p>
         This is some expensive data:
-        <b pump="myData.data[0]" pump-replace>
+        <b $="myData.data[0]">
             Loading...
         </b>
     </p>
-    <p pump="myData.otherData[0]" pump-replace>
+    <p $="myData.otherData[0]">
         This data doesn't exist
     </p>
+
+    <div ignore-contents>
+        <!-- Not executed so no content -->
+        <p $="myData?.data?.[0] || 'hi'"></p>
+    </div>
 </main>
 </body>
 </html>

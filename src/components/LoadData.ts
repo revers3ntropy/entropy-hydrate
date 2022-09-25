@@ -51,7 +51,7 @@ export const LoadData = Component<{
     if (!content.trim()) {
         set(to, value);
     } else {
-        $el.setAttribute(`pour.${to}`, JSON.stringify(value));
+        $el.setAttribute(`data-${to}`, JSON.stringify(value));
         return content;
     }
 });

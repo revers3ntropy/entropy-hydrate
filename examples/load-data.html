@@ -11,8 +11,8 @@
 </head>
 <body>
 <main>
-  <p foreach="element in console.log(mock_data.data), mock_data.data">
-      <span $="console.log(element), element.a"></span>
+  <p foreach="element in mock_data.data">
+      <span $="element.a"></span>
   </p>
 
   <load-data src="assets/mock-api.json" response="json" to="other_data">

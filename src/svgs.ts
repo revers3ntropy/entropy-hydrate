@@ -1,5 +1,5 @@
 import { El } from "./types";
-import { ROOT_PATH } from "./globals";
+import { DRY_CONTENT_SVG_ATTR, SVG_ATTR } from "./globals";
 
 const svgCache: Record<string, string> = {};
 
@@ -12,7 +12,7 @@ export function preloadSVGs(...uris: string[]) {
             continue;
         }
         // don't await, because we want to load them all at the same time
-        getSVGFromURI(ROOT_PATH + '/assets/img/' + uri).then();
+        getSVGFromURI(uri).then();
     }
 }
 
@@ -24,19 +24,17 @@ export function preloadSVGs(...uris: string[]) {
  * @returns {Promise<void>}
  */
 export  async function loadSVG($el: El) {
-    const svgPath = $el.getAttribute('svg');
+    const svgPath = $el.getAttribute(SVG_ATTR);
     if (!svgPath) {
         throw new Error('No SVG path specified');
     }
 
-    let content = $el.getAttribute('svg-less-content') ?? $el.innerHTML;
+    let content = $el.getAttribute(DRY_CONTENT_SVG_ATTR) ?? $el.innerHTML;
 
     // set before loading, so we don't load twice while waiting for the svg to load
-    $el.setAttribute('svg-less-content', content);
+    $el.setAttribute(DRY_CONTENT_SVG_ATTR, content);
 
-    const uri = ROOT_PATH + '/assets/img/' + svgPath;
-
-    let svgContent = await getSVGFromURI(uri);
+    let svgContent = await getSVGFromURI(svgPath);
 
     if (svgContent) {
         content = svgContent + content
@@ -56,7 +54,7 @@ export async function getSVGFromURI(uri: string): Promise<string> {
     // if not cached, then go get it
     const raw = await fetch(uri);
     if (!raw.ok) {
-        console.error(`Failed to load SVG at '${uri}' for `, self);
+        console.error(`Failed to load SVG at '${uri}'`);
         return '';
     }
     let svg = await raw.text();

@@ -21,10 +21,10 @@
         Note that you can access 'counter' in the ambient context,
         but it will not update the DOM if you simply set the variable.
      -->
-    <button bind.click="update('counter', x => x + 1)">+</button>
-    <button bind.click="update('counter', x => x - 1)">-</button>
+    <button @click="update('counter', x => x + 1)">+</button>
+    <button @click="update('counter', x => x - 1)">-</button>
     <!-- pump the data from the reservoir into the component reactively -->
-    <span pump='counter'></span>
+    <span $='counter'></span>
 </main>
 </body>
 </html>

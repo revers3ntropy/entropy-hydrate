@@ -4,6 +4,25 @@ import { attrsStartWith, escapeHTML } from "./utils";
 import { loadSVG } from "./svgs";
 import reservoir from "./index";
 import { get, has, set } from "./reservoir";
+import {
+    BIND_PERSIST_ATTR,
+    BIND_PREFIX,
+    BIND_UPDATE_EVENTS,
+    DRY_CONTENT_ATTR,
+    DRY_CONTENT_FOR_ATTR,
+    DRY_CONTENT_HIDDEN_ATTR, EACH_DELIMITER,
+    EXEC_PREFIX,
+    FOR_ATTR,
+    FOR_EACH_PREFIX,
+    FOR_IN_DELIMITER,
+    HIDDEN_ATTR,
+    NO_RECURSE_ATTR,
+    POUR_PREFIX, POUR_PREFIX_DELIMITER,
+    PUMP_END_ATTR,
+    PUMP_RAW_ATTR,
+    PUMP_START_ATTR,
+    SVG_ATTR
+} from "./globals";
 
 export async function waitForLoaded () {
     return await new Promise<void>(resolve => {
@@ -23,8 +42,8 @@ export function execute(key: string, $el: El | null, parameters: Record<string, 
 
     let parent: El | null = $el;
     while (parent) {
-        for (let attr of attrsStartWith(parent, 'pour.')) {
-            const key = attr.split('.', 2)[1];
+        for (let attr of attrsStartWith(parent, POUR_PREFIX)) {
+            const key = attr.split(POUR_PREFIX_DELIMITER, 2)[1];
             const attrValue = parent.getAttribute(attr);
             if (attrValue === null) continue;
             const value = execute(attrValue, parent.parentElement, parameters);
@@ -34,7 +53,13 @@ export function execute(key: string, $el: El | null, parameters: Record<string, 
         parent = parent.parentElement;
     }
 
-    parameters['$el'] = $el;
+    parameters.$el = $el;
+
+    for (let param of Object.keys(parameters)) {
+        if (!param.match(/^[a-zA-z_]+[a-zA-z0-9_]*$/)) {
+            delete parameters[param];
+        }
+    }
 
     const envVarNames = Object.keys(parameters);
     const envVarValues = Object.keys(parameters).map(k => parameters[k]);
@@ -66,76 +91,62 @@ export function execute(key: string, $el: El | null, parameters: Record<string, 
 export function hydrate($el: ElRaw = document) {
     const start = performance.now();
 
-    for (let hook of globals.hooks['preHydrate']) {
+    for (let hook of globals.hooks.preHydrate) {
         hook($el);
     }
 
     if ($el instanceof Element) {
-        if ($el.hasAttribute('hidden') || $el.hasAttribute('hidden-dry')) {
+        if ($el.hasAttribute(HIDDEN_ATTR) || $el.hasAttribute(DRY_CONTENT_HIDDEN_ATTR)) {
             if (!hydrateIf($el)) {
                 return;
             }
         }
 
-        if ($el.getAttribute('aria-hidden') === 'true') {
-            return;
-        }
-
-        if ($el.hasAttribute('waterproof')) {
-            return;
-        }
-
-        if ($el.hasAttribute('bind')) {
-            bind($el);
-        }
-
-        if ($el.hasAttribute('pump') || $el.hasAttribute('$')) {
+        if ($el.hasAttribute(EXEC_PREFIX)) {
             hydrateDry($el);
         }
 
+        if ($el.hasAttribute(BIND_PREFIX)) {
+            bind($el);
+        }
+
         for (let attr of $el.getAttributeNames() || []) {
-            if (attr.startsWith('pump.')) {
+            if (attr.startsWith(EXEC_PREFIX)) {
                 hydrateAttribute($el, attr);
-            } else if (attr.startsWith('bind.')) {
-                bindListener($el, attr);
-            } else if (attr.startsWith('$')) {
-                hydrateAttribute($el, attr.split('$', 2)[1]);
-            } else if (attr.startsWith('@')) {
+            } else if (attr.startsWith(BIND_PREFIX)) {
                 bindListener($el, attr);
             }
         }
 
-        if ($el.hasAttribute('foreach')) {
+        if ($el.hasAttribute(FOR_ATTR)) {
             hydrateFor($el);
         }
 
-        if ($el?.hasAttribute?.('args') && 'reloadComponent' in $el) {
-            ($el as any).reloadComponent();
-        }
-
-        if ($el.hasAttribute('svg')) {
+        if ($el.hasAttribute(SVG_ATTR)) {
             loadSVG($el).then();
         }
     }
 
-    for (const child of $el.children) {
-        // don't await, because we don't want to block the page load
-        hydrate(child);
+    if (!($el instanceof Element) || !$el.hasAttribute(NO_RECURSE_ATTR)) {
+        for (const child of $el.children) {
+            hydrate(child);
+        }
     }
 
     if ($el === document) {
         globals.perf.renders.push(`Hydrated document in ${performance.now() - start}ms: ${new Error().stack}`);
     }
 
-    for (let hook of globals.hooks['postHydrate']) {
+    for (let hook of globals.hooks.postHydrate) {
         hook($el);
     }
 }
 
 function hydrateDry($el: El) {
-    const key = $el.getAttribute('pump') || $el.getAttribute('$');
-    let dry = $el.getAttribute('__dry') ?? $el.innerHTML;
+    const key = $el.getAttribute(EXEC_PREFIX);
+    let dry = $el.getAttribute(DRY_CONTENT_ATTR) ?? $el.innerHTML;
     if (!key) return;
+
     let value = execute(key, $el);
     if (value === globals.executeError) return;
 
@@ -143,34 +154,34 @@ function hydrateDry($el: El) {
         value = JSON.stringify(value);
     }
 
-    if (!$el.hasAttribute('pump-dirty')) {
+    if (!$el.hasAttribute(PUMP_RAW_ATTR)) {
         value = escapeHTML(value);
     }
 
     let html;
 
-    if ($el.hasAttribute('pump-end') || $el.hasAttribute('$end')) {
+    if ($el.hasAttribute(PUMP_END_ATTR)) {
         html = dry + value;
-    } else if ($el.hasAttribute('pump-replace') || $el.hasAttribute('$replace')) {
-        html = value;
-    } else {
+    } else if ($el.hasAttribute(PUMP_START_ATTR)) {
         html = value + dry;
+    } else {
+        html = value;
     }
 
-    if (!$el.hasAttribute('__dry')) {
-        $el.setAttribute('__dry', dry);
+    if (!$el.hasAttribute(DRY_CONTENT_ATTR)) {
+        $el.setAttribute(DRY_CONTENT_ATTR, dry);
     }
 
     $el.innerHTML = html;
 }
 
 function hydrateIf($el: El) {
-    let key = $el.getAttribute('__hidden-dry');
+    let key = $el.getAttribute(DRY_CONTENT_HIDDEN_ATTR);
 
     if (!key) {
-        key = $el.getAttribute('hidden');
+        key = $el.getAttribute(HIDDEN_ATTR);
         if (!key) return;
-        $el.setAttribute('__hidden-dry', '');
+        $el.setAttribute(DRY_CONTENT_HIDDEN_ATTR, '');
     }
 
     const value = execute(key, $el);
@@ -196,12 +207,10 @@ function bind($el: El) {
         throw 'Cannot bind to element without value attribute';
     }
 
-    const key = $el.getAttribute('bind');
-    const persist = $el.hasAttribute('bind-persist') || $el.hasAttribute('persist');
+    const key = $el.getAttribute(BIND_PREFIX);
+    const persist = $el.hasAttribute(BIND_PERSIST_ATTR);
 
     if (key === null || !key) return;
-    if (persist === undefined) return;
-
 
     function update() {
         if (!key) return;
@@ -211,10 +220,7 @@ function bind($el: El) {
         set(key, $el.value, persist);
     }
 
-    const bindUpdateEvents = ['input', 'change', 'blur', 'keyup', 'keydown', 'keypress',
-        'click', 'touchstart', 'touchend', 'touchmove', 'touchcancel'];
-
-    for (let event of bindUpdateEvents) {
+    for (let event of BIND_UPDATE_EVENTS) {
         if ($el.__Hydrate.trackedEvents[event]) continue;
 
         $el.__Hydrate.trackedEvents[event] = update;
@@ -232,7 +238,7 @@ function bind($el: El) {
 }
 
 function bindListener($el: El, attr: string) {
-    if (attr === '@') {
+    if (attr === BIND_PREFIX) {
         return;
     }
 
@@ -262,9 +268,7 @@ function bindListener($el: El, attr: string) {
     }
 
     let name;
-    if (attr.startsWith('bind.')) {
-        name = attr.substring(5);
-    } else if (attr.startsWith('@')) {
+    if (attr.startsWith(BIND_PREFIX)) {
         name = attr.substring(1);
     } else {
         throw `Invalid listener attribute '${attr}'`;
@@ -277,34 +281,31 @@ function bindListener($el: El, attr: string) {
 }
 
 function hydrateAttribute($el: El, attrName: string) {
-    const key = '`' + $el.getAttribute(attrName) + '`';
+    if (attrName === EXEC_PREFIX) return;
+    const key = $el.getAttribute(attrName);
+    if (!key) throw `Cannot find key for ${attrName}`;
     let value = execute(key, $el);
     if (value === globals.executeError) return;
-
-    const attr = attrName.split('.', 2)[1];
-    $el.setAttribute(attr, value);
-
-    if (attr === 'args' && 'reloadComponent' in $el) {
-        if (typeof $el.reloadComponent === 'function') {
-            $el.reloadComponent();
-        }
-    }
+    $el.setAttribute(attrName.substring(1), value);
 }
 
 function hydrateFor($el: El) {
-    const key = $el.getAttribute('foreach');
+    const key = $el.getAttribute(FOR_ATTR);
     if (!key) return;
 
-    let dry = $el.getAttribute('foreach-dry') ?? $el.innerHTML;
+    let dry = $el.getAttribute(DRY_CONTENT_FOR_ATTR) ?? $el.innerHTML;
 
-    const [ symbol, value ] = key.split(' in ');
+    if (key.split(FOR_IN_DELIMITER).length !== 2) {
+        throw new SyntaxError('Invalid foreach syntax: must be `<identifier> in <expression>`');
+    }
+    const [ symbol, value ] = key.split(FOR_IN_DELIMITER);
 
     let iterator = execute(value, $el);
 
     if (iterator === globals.executeError) {
         $el.innerHTML = '';
-        if (!$el.hasAttribute('foreach-dry')) {
-            $el.setAttribute('foreach-dry', dry);
+        if (!$el.hasAttribute(DRY_CONTENT_FOR_ATTR)) {
+            $el.setAttribute(DRY_CONTENT_FOR_ATTR, dry);
         }
         return;
     }
@@ -317,7 +318,7 @@ function hydrateFor($el: El) {
     const eachAttrs = [];
 
     for (let attr of $el?.getAttributeNames?.() || []) {
-        if (attr.startsWith('each.')) {
+        if (attr.startsWith(FOR_EACH_PREFIX)) {
             eachAttrs.push(attr);
         }
     }
@@ -327,13 +328,14 @@ function hydrateFor($el: El) {
     for (let item of iterator) {
         const itemDiv = document.createElement('div');
         itemDiv.innerHTML = dry;
-        itemDiv.setAttribute(`pour.${symbol}`, JSON.stringify(item));
+        itemDiv.setAttribute(`${POUR_PREFIX}${symbol}`, JSON.stringify(item));
 
         for (let attr of eachAttrs) {
-            const key = '`' + $el.getAttribute(attr) + '`';
+            const key = $el.getAttribute(attr);
+            if (!key) throw `Cannot find key for ${attr}`;
             const value = execute(key, itemDiv);
             if (value === globals.executeError) continue;
-            itemDiv.setAttribute(attr.split('.', 2)[1], value);
+            itemDiv.setAttribute(attr.split(EACH_DELIMITER, 2)[1], value);
         }
 
         $el.classList.add('reservoir-container');
@@ -342,7 +344,7 @@ function hydrateFor($el: El) {
 
     // do at end so that the element stays hidden until it has been
     // fully initialised.
-    if (!$el.hasAttribute('foreach-dry')) {
-        $el.setAttribute('foreach-dry', dry);
+    if (!$el.hasAttribute(DRY_CONTENT_FOR_ATTR)) {
+        $el.setAttribute(DRY_CONTENT_FOR_ATTR, dry);
     }
 }

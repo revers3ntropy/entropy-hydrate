@@ -19,7 +19,7 @@ export function loadFromLocalStorage(shouldHydrate = true) {
 
 export function saveToLocalStorage() {
     waitForLoaded().then(() => {
-        localStorage.setItem(globals.localStorageKey, JSON.stringify(globals.lsData));
+        localStorage.setItem(globals.LS_KEY, JSON.stringify(globals.lsData));
     });
 }
 
@@ -72,6 +72,7 @@ export function set(key: string | Record<string, unknown>, item?: unknown, persi
 
     areChanges ||= globals.data[key] !== item;
     globals.data[key] = item;
+
     if (persist) {
         globals.lsData[key] = item;
     }
@@ -103,7 +104,7 @@ export function has(key: string) {
 
 
 function getFromLS (): Record<string, unknown> {
-    const lsDataRaw = localStorage.getItem(globals.localStorageKey) ?? '{}';
+    const lsDataRaw = localStorage.getItem(globals.LS_KEY) ?? '{}';
     let lsData;
 
     try {

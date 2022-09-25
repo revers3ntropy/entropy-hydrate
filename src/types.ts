@@ -7,11 +7,15 @@ declare global {
     }
 }
 
+export interface IHydrateInternals {
+    trackedEvents: Record<string, any>;
+    mutationObserver?: MutationObserver;
+    attributesJSON?: string;
+}
+
 export type IExtraElProperties = Partial<HTMLInputElement> & {
     reloadComponent?: Function;
-    __Hydrate?: {
-        trackedEvents: Record<string, any>
-    };
+    __Hydrate?: IHydrateInternals
 };
 
 export type El = Element & IExtraElProperties ;

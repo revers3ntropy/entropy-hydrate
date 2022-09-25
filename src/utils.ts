@@ -41,3 +41,11 @@ export function attrsStartWith($el: El, start: string): string[] {
     }
     return result;
 }
+
+export function attrsAsJson($el: El): string {
+    const result: Record<string, string | null> = {};
+    for (let attr of $el.attributes) {
+        result[attr.name] = attr.value;
+    }
+    return JSON.stringify(result);
+}
