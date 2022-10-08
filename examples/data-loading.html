@@ -3,9 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <title>Data Loading</title>
+    <link rel="stylesheet" href="../index.css">
     <script defer type="module">
         import '../index.js';
-		await reservoir.init();
+		await hydrate.init();
 
 		// this mimics something like an API call
 		function getSomeExpensiveData() {
@@ -17,7 +18,7 @@
 		}
 
 		// set the data after waiting for it to load
-		reservoir.set({
+		hydrate.set({
             myData: await getSomeExpensiveData()
 		});
     </script>

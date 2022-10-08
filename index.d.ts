@@ -4,6 +4,7 @@ export interface IHydrateInternals {
 	trackedEvents: Record<string, any>;
 	mutationObserver?: MutationObserver;
 	attributesJSON?: string;
+	puddle: Record<string, any>;
 }
 export declare type IExtraElProperties = Partial<HTMLInputElement> & {
 	reloadComponent?: Function;
@@ -13,6 +14,7 @@ export declare type El = Element & IExtraElProperties;
 export declare type ElRaw = El | HTMLElement | Document | Window;
 export interface IPerfData {
 	renders: string[];
+	execs: number[];
 }
 export interface IProps {
 	id: number;
@@ -54,12 +56,12 @@ export declare function set(key: string | Record<string, unknown>, item?: unknow
 export declare function get(key: string): any;
 export declare function has(key: string): boolean;
 export interface IInitConfig {
-	rootPath?: string;
 	localStorageKey?: string;
-	svgs?: string[];
 }
-export declare function init({ rootPath, localStorageKey, svgs }?: IInitConfig): Promise<void>;
-export interface Reservoir {
+export declare function init({ localStorageKey }?: IInitConfig): Promise<void>;
+export interface Hydrate {
+	($el?: ElRaw): void;
+	[key: string]: any;
 	Component: typeof Component;
 	init: typeof init;
 	setFromObj: typeof setFromObj;
@@ -73,18 +75,16 @@ export interface Reservoir {
 	setLocalStorageKey: typeof setLocalStorageKey;
 	errors: typeof errors;
 	performance: typeof perf;
-	reload: typeof hydrate;
-	hydrate: typeof hydrate;
 	hooks: typeof hooks;
 	hook: typeof addHook;
 	components: typeof components;
 }
-export declare const reload: typeof hydrate;
-export declare const hook: typeof addHook;
-declare const reservoir: Reservoir;
 
 export {
-	reservoir as default,
+	addHook as hook,
+	hydrate as default,
+	hydrate as reload,
+	perf as performance,
 };
 
 export {};

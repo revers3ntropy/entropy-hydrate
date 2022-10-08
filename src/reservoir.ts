@@ -16,7 +16,6 @@ export function loadFromLocalStorage(shouldHydrate = true) {
     globals.isLoaded();
 }
 
-
 export function saveToLocalStorage() {
     waitForLoaded().then(() => {
         localStorage.setItem(globals.LS_KEY, JSON.stringify(globals.lsData));

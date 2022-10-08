@@ -32,14 +32,8 @@ export function escapeHTML(unsafe: any): string {
 }
 
 export function attrsStartWith($el: El, start: string): string[] {
-    const result = [];
-
-    for (let attr of $el.attributes) {
-        if (attr.name.startsWith(start)) {
-            result.push(attr.name);
-        }
-    }
-    return result;
+    return $el.getAttributeNames()
+        .filter(attr => attr.startsWith(start));
 }
 
 export function attrsAsJson($el: El): string {

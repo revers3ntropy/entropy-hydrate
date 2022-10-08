@@ -75,7 +75,8 @@ export function Component
             super();
 
             this.__Hydrate = {
-                trackedEvents: {}
+                trackedEvents: {},
+                puddle: {}
             };
         }
         /** @override */
@@ -100,7 +101,8 @@ export function Component
 
             if (!this.__Hydrate) {
                 this.__Hydrate = {
-                    trackedEvents: {}
+                    trackedEvents: {},
+                    puddle: {}
                 };
             }
 

@@ -1,8 +1,6 @@
 import * as globals from "./globals";
 import { El, ElRaw } from "./types";
 import { attrsStartWith, escapeHTML } from "./utils";
-import { loadSVG } from "./svgs";
-import reservoir from "./index";
 import { get, has, set } from "./reservoir";
 import {
     BIND_PERSIST_ATTR,
@@ -20,9 +18,9 @@ import {
     POUR_PREFIX, POUR_PREFIX_DELIMITER,
     PUMP_END_ATTR,
     PUMP_RAW_ATTR,
-    PUMP_START_ATTR,
-    SVG_ATTR
+    PUMP_START_ATTR
 } from "./globals";
+import type { Hydrate } from "./index";
 
 export async function waitForLoaded () {
     return await new Promise<void>(resolve => {
@@ -35,13 +33,27 @@ export function execute(key: string, $el: El | null, parameters: Record<string, 
     const initialData = JSON.stringify(globals.data);
 
     parameters = {
-        ...reservoir,
+        ...Object.getOwnPropertyNames(hydrate)
+            .reduce<Record<string, any>>((acc, key) => {
+                acc[key] = (hydrate as Hydrate)[key];
+                return acc;
+            }, {}),
         ...globals.data,
         ...parameters
     };
 
+    let parents = [];
     let parent: El | null = $el;
     while (parent) {
+        parents.push(parent);
+        parent = parent.parentElement;
+    }
+
+    for (const parent of parents) {
+        parameters = {
+            ...parameters,
+            ...parent.__Hydrate?.puddle,
+        };
         for (let attr of attrsStartWith(parent, POUR_PREFIX)) {
             const key = attr.split(POUR_PREFIX_DELIMITER, 2)[1];
             const attrValue = parent.getAttribute(attr);
@@ -50,7 +62,6 @@ export function execute(key: string, $el: El | null, parameters: Record<string, 
             if (value === globals.executeError) continue;
             parameters[key] = value;
         }
-        parent = parent.parentElement;
     }
 
     parameters.$el = $el;
@@ -67,9 +78,10 @@ export function execute(key: string, $el: El | null, parameters: Record<string, 
         return (${key});
     `;
 
+    const start = performance.now();
     let res: any;
     try {
-        res = new Function(...envVarNames, execBody).call(window.reservoir, ...envVarValues);
+        res = new Function(...envVarNames, execBody).call(window.hydrate, ...envVarValues);
     } catch (e: any) {
         if (e instanceof ReferenceError || e instanceof TypeError) {
             globals.errors.push([key, e]);
@@ -80,6 +92,8 @@ export function execute(key: string, $el: El | null, parameters: Record<string, 
         }
         res = globals.executeError;
     }
+    const end = performance.now();
+    globals.perf.execs.push(end - start);
 
     if (initialData !== JSON.stringify(globals.data)) {
         hydrate();
@@ -120,10 +134,6 @@ export function hydrate($el: ElRaw = document) {
 
         if ($el.hasAttribute(FOR_ATTR)) {
             hydrateFor($el);
-        }
-
-        if ($el.hasAttribute(SVG_ATTR)) {
-            loadSVG($el).then();
         }
     }
 
@@ -200,7 +210,7 @@ function hydrateIf($el: El) {
 function bind($el: El) {
 
     if (!$el.__Hydrate) {
-        $el.__Hydrate = { trackedEvents: {} };
+        $el.__Hydrate = { trackedEvents: {}, puddle: {} };
     }
 
     if ($el.value === undefined) {
@@ -254,7 +264,7 @@ function bindListener($el: El, attr: string) {
     }
 
     if (!$el.__Hydrate) {
-        $el.__Hydrate = { trackedEvents: {} };
+        $el.__Hydrate = { trackedEvents: {}, puddle: {} };
     }
 
     // if we've already bound this event, don't bind it again
@@ -326,9 +336,10 @@ function hydrateFor($el: El) {
     $el.innerHTML = '';
 
     for (let item of iterator) {
-        const itemDiv = document.createElement('div');
+        const itemDiv = <El>document.createElement('div');
         itemDiv.innerHTML = dry;
-        itemDiv.setAttribute(`${POUR_PREFIX}${symbol}`, JSON.stringify(item));
+        itemDiv.__Hydrate ??= { trackedEvents: {}, puddle: {} };
+        itemDiv.__Hydrate.puddle[symbol] = item;
 
         for (let attr of eachAttrs) {
             const key = $el.getAttribute(attr);

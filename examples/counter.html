@@ -3,14 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <title>Counter</title>
+    <link rel="stylesheet" href="../index.css">
     <script defer type="module">
         // Import and initialize
         import '../index.js';
-	    await reservoir.init();
+	    await hydrate.init();
 
 		// set a global variable in the reservoir of data called 'counter'
         // with an initial value of 0
-		reservoir.set('counter', 0);
+		hydrate.set('counter', 0);
     </script>
 </head>
 <body>

@@ -6,7 +6,7 @@ module.exports = {
     output: {
         filename: './index.js',
         path: path.resolve(__dirname),
-        library: 'reservoir',
+        library: 'hydrate',
         libraryTarget: 'umd',
         umdNamedDefine: true,
         globalObject: `window`
@@ -28,6 +28,6 @@ module.exports = {
     },
     devtool: 'source-map',
     optimization: {
-        minimize: true,
+        minimize: false,
     }
 };

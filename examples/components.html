@@ -3,11 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <title>Components</title>
+    <link rel="stylesheet" href="../index.css">
     <script defer type="module">
         import '../index.js';
-        await reservoir.init();
+        await hydrate.init();
 
-        reservoir.set('clicks', 0);
+        hydrate.set('clicks', 0);
 
 		// create component, giving it the <my-button> tag
         // content is the innerHTML of the component
@@ -15,7 +16,7 @@
         // which is interpreted as JS
         // This component returns a string, which is then assigned to the innerHTML
         // of the <my-button> tag
-        reservoir.Component('my-button', ({ bgColor, content }) => `
+        hydrate.Component('my-button', ({ bgColor, content }) => `
             <button
                 style="background-color: ${bgColor}; border: none; padding: 4px; margin: 4px;"
                 @click="update('clicks', x => x + 1)"
@@ -25,7 +26,7 @@
         `);
 
 		// Create another component, called 'my-container'
-        reservoir.Component('my-container', ({ content }) => {
+        hydrate.Component('my-container', ({ content }) => {
 			return `
                 <div style="border: 1px solid grey; padding: 20px">
                     ${content}

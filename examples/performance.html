@@ -3,11 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <title>Data Loading</title>
+    <link rel="stylesheet" href="../index.css">
     <script defer type="module">
 	    const start = performance.now();
 
 	    import '../index.js';
-		await reservoir.init();
+		await hydrate.init();
 
 		console.log(`Reservoir took ${performance.now() - start}ms to load`);
 
@@ -23,7 +24,7 @@
 		}
 
 		const beforeComponent = performance.now();
-		reservoir.Component('my-component', ({ text, show }) => `
+		hydrate.Component('my-component', ({ text, show }) => `
             <p
                 hidden="${!show}"
                 style="border-bottom: 1px solid grey; overflow-x: hidden"
@@ -34,18 +35,22 @@
 		console.log(`Component took ${performance.now() - beforeComponent}ms to define`);
 
 		const data = Array(N).fill(0).map(() => ({
-			text: makeText(100),
+			text: makeText(50),
 			show: true
 		}));
 
 		const before = performance.now();
 
-		reservoir.set({
+		hydrate.set({
 			testData: data
 		}, true);
 
 		const after = performance.now();
-		console.log(`Time to create ${N} elements: ${after - before}ms`);
+		console.log(`Time to create ${N} elements: ${(after - before).toFixed(3)}ms`);
+
+		const nExecs = hydrate.performance.execs.length;
+		const totalExecs = hydrate.performance.execs.reduce((a, b) => a + b, 0);
+        console.log(`Time to execute JS: ${nExecs} * ${(totalExecs / nExecs).toFixed(3)} = ${totalExecs}ms`);
         console.log(`Total time: ${after - start}ms`);
     </script>
 </head>

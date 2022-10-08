@@ -6,7 +6,6 @@ export const
     DRY_CONTENT_ATTR = '__hydrate-dry-content',
     DRY_CONTENT_FOR_ATTR = '__hydrate-foreach-dry',
     DRY_CONTENT_HIDDEN_ATTR = '__hydrate-hidden-dry',
-    DRY_CONTENT_SVG_ATTR = '__hydrate-svg-dry',
     POUR_PREFIX = 'data-',
     POUR_PREFIX_DELIMITER = '-',
     FOR_EACH_PREFIX = 'each.',
@@ -19,7 +18,6 @@ export const
     PUMP_END_ATTR = '$end',
     PUMP_START_ATTR = '$start',
     HIDDEN_ATTR = 'hidden',
-    SVG_ATTR = 'svg',
     NO_RECURSE_ATTR = 'ignore-contents';
 
 export let data: Record<string, unknown> = {};
@@ -45,7 +43,8 @@ export const isLoaded = () => {
 export let errors: [string, Error][] = [];
 
 export const perf: IPerfData = {
-    renders: []
+    renders: [],
+    execs: []
 };
 
 export type Hook = ($el: ElRaw) => void;

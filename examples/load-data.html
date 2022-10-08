@@ -3,9 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <title>Load Data</title>
+  <link rel="stylesheet" href="../index.css">
   <script defer type="module">
     import '../index.js';
-    await reservoir.init();
+    await hydrate.init();
   </script>
   <load-data src="assets/mock-api.json" response="json" to="mock_data"></load-data>
 </head>
