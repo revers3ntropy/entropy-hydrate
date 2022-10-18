@@ -6,9 +6,10 @@
     <link rel="stylesheet" href="../index.css">
     <script defer type="module">
         import '../index.js';
-        await hydrate.init();
+		const { init, set, Component, update, html, raw } = hydrate;
+        await init();
 
-        hydrate.set('clicks', 0);
+        set('clicks', 0);
 
 		// create component, giving it the <my-button> tag
         // content is the innerHTML of the component
@@ -16,23 +17,23 @@
         // which is interpreted as JS
         // This component returns a string, which is then assigned to the innerHTML
         // of the <my-button> tag
-        hydrate.Component('my-button', ({ bgColor, content }) => `
+        // Notice that the raw HTML 'content' prop must be shown to be trusted using `raw`
+        // otherwise the HTML would be rendered as text.
+        Component('my-button', ({ bgColor, content }) => html`
             <button
                 style="background-color: ${bgColor}; border: none; padding: 4px; margin: 4px;"
-                @click="update('clicks', x => x + 1)"
+                @click="${() => update('clicks', x => x + 1)}()"
             >
-                ${content}
+                ${raw(content)}
             </button>
         `);
 
 		// Create another component, called 'my-container'
-        hydrate.Component('my-container', ({ content }) => {
-			return `
-                <div style="border: 1px solid grey; padding: 20px">
-                    ${content}
-                </div>
-            `;
-        });
+        Component('my-container', ({ content }) => html`
+            <div style="border: 1px solid grey; padding: 20px">
+                ${raw(content)}
+            </div>
+        `);
     </script>
 </head>
 <body>

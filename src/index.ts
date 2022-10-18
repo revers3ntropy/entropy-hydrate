@@ -3,9 +3,10 @@ import { waitForLoaded, hydrate } from "./hydrate";
 import { Component } from "./components";
 import { addHook } from "./hooks";
 import { components } from './components/index';
-import { perf, setLocalStorageKey, errors, hooks } from "./globals";
+import { perf, setLocalStorageKey, errors, hooks, internals } from "./globals";
 import { loadFromLocalStorage, set, setDefaults, setFromObj, update, get, has } from "./reservoir";
 import { ElRaw } from "./types";
+import { html, raw } from "./html";
 
 export interface IInitConfig {
     localStorageKey?: string;
@@ -41,6 +42,9 @@ export interface Hydrate {
     hooks: typeof hooks;
     hook: typeof addHook;
     components: typeof components;
+    html: typeof html;
+    raw: typeof raw;
+    internals: typeof internals;
 }
 
 export {
@@ -61,7 +65,10 @@ export {
     hooks,
     perf as performance,
     hydrate as reload,
-    addHook as hook
+    addHook as hook,
+    html,
+    raw,
+    internals
 };
 
 Object.defineProperties(hydrate, {
@@ -81,6 +88,9 @@ Object.defineProperties(hydrate, {
     addHook: { value: addHook },
     update: { value: update },
     components: { value: components },
+    html: { value: html },
+    raw: { value: raw },
+    internals: { value: internals },
 });
 
 window.hydrate = hydrate as Hydrate;

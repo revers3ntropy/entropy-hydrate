@@ -34,6 +34,10 @@ declare const perf: IPerfData;
 export declare type Hook = ($el: ElRaw) => void;
 export declare type HookTypes = "preHydrate" | "postHydrate";
 export declare const hooks: Record<HookTypes, Hook[]>;
+export interface Internals {
+	funcs: Record<any, Function>;
+}
+export declare const internals: Internals;
 declare function addHook(type: HookTypes, hook: Hook): void;
 export declare type ResponseType = "text" | "json";
 export declare const components: {
@@ -55,6 +59,12 @@ export declare function update(value: string, updater: (value: unknown) => unkno
 export declare function set(key: string | Record<string, unknown>, item?: unknown, persist?: boolean): void;
 export declare function get(key: string): any;
 export declare function has(key: string): boolean;
+export declare function html(strings: TemplateStringsArray, ...values: any[]): string;
+declare class EscapedHTML<T> {
+	value: T;
+	constructor(value: T);
+}
+export declare function raw(value: any): EscapedHTML<any>;
 export interface IInitConfig {
 	localStorageKey?: string;
 }
@@ -78,6 +88,9 @@ export interface Hydrate {
 	hooks: typeof hooks;
 	hook: typeof addHook;
 	components: typeof components;
+	html: typeof html;
+	raw: typeof raw;
+	internals: typeof internals;
 }
 
 export {

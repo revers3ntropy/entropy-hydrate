@@ -6,9 +6,9 @@
     <link rel="stylesheet" href="../index.css">
     <script defer type="module">
 	    const start = performance.now();
-
 	    import '../index.js';
-		await hydrate.init();
+		const { init, Component, set, html } = hydrate;
+		await init();
 
 		console.log(`Reservoir took ${performance.now() - start}ms to load`);
 
@@ -23,8 +23,11 @@
 			return result;
 		}
 
+		let renders = 0;
+
 		const beforeComponent = performance.now();
-		hydrate.Component('my-component', ({ text, show }) => `
+		Component('my-component', ({ text, show }) => html`
+            ${console.count('render')}
             <p
                 hidden="${!show}"
                 style="border-bottom: 1px solid grey; overflow-x: hidden"
@@ -41,12 +44,11 @@
 
 		const before = performance.now();
 
-		hydrate.set({
-			testData: data
-		}, true);
+		set({ testData: data }, true);
 
 		const after = performance.now();
 		console.log(`Time to create ${N} elements: ${(after - before).toFixed(3)}ms`);
+		console.log(`Time per element: ${(after - before) / N}ms`);
 
 		const nExecs = hydrate.performance.execs.length;
 		const totalExecs = hydrate.performance.execs.reduce((a, b) => a + b, 0);

@@ -55,3 +55,11 @@ export const hooks: Record<HookTypes, Hook[]> = {
     'preHydrate': [],
     'postHydrate': []
 };
+
+export interface Internals {
+    funcs: Record<any, Function>
+}
+
+export const internals: Internals = {
+    funcs: {}
+};
