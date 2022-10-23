@@ -1,8 +1,9 @@
 import * as globals from './globals';
 import { El, IExtraElProperties, IHydrateInternals, IProps } from "./types";
 import { attrsAsJson, getComponentId, waitForDocumentReady } from "./utils";
-import { execute, hydrate } from "./hydrate";
+import { hydrate } from "./hydrate";
 import { DRY_CONTENT_ATTR_COMPONENT, EXEC_PREFIX } from "./globals";
+import { execute } from "./execute";
 
 export function Component<Props>
 (name: string, cb: (props: Readonly<Props & IProps>) => unknown):

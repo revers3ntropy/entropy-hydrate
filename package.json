@@ -1,6 +1,6 @@
 {
     "name": "entropy-hydrate",
-    "version": "0.0.23",
+    "version": "0.0.25",
     "description": "Very lightweight web framework",
     "main": "index.js",
     "type": "module",

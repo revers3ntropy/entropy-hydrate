@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Data Loading</title>
+    <title>Performance</title>
     <link rel="stylesheet" href="../index.css">
     <script defer type="module">
 	    const start = performance.now();
@@ -10,10 +10,14 @@
 		const { init, Component, set, html } = hydrate;
 		await init();
 
-		console.log(`Reservoir took ${performance.now() - start}ms to load`);
+	    function round (num, sigFigs=3) {
+		    return Math.round(num * 10**sigFigs) * 10 ** -sigFigs;
+	    }
+
+		console.log(`Reservoir took ${round(performance.now() - start)}ms to load`);
 
         const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-		const N = 2000;
+		const N = 500;
 
 		function makeText (length) {
 			let result  = '';
@@ -32,7 +36,7 @@
                 ${text}
             </p>
         `);
-		console.log(`Component took ${performance.now() - beforeComponent}ms to define`);
+		console.log(`Component took ${round(performance.now() - beforeComponent)}ms to define`);
 
 		const data = Array(N).fill(0).map(() => ({
 			text: makeText(50),
@@ -44,13 +48,13 @@
 		set({ testData: data }, true);
 
 		const after = performance.now();
-		console.log(`Time to create ${N} elements: ${(after - before).toFixed(3)}ms`);
-		console.log(`Time per element: ${(after - before) / N}ms`);
+		console.log(`Time to create ${N} elements: ${round(after - before)}ms`);
+		console.log(`Time per element: ${round((after - before) / N)}ms`);
 
 		const nExecs = hydrate.performance.execs.length;
 		const totalExecs = hydrate.performance.execs.reduce((a, b) => a + b, 0);
-        console.log(`Time to execute JS: ${nExecs} * ${(totalExecs / nExecs).toFixed(3)} = ${totalExecs}ms`);
-        console.log(`Total time: ${after - start}ms`);
+        console.log(`Time to execute JS: ${nExecs} * ${round(totalExecs / nExecs)} = ${round(totalExecs)}ms`);
+        console.log(`Total time: ${round(after - start)}ms`);
     </script>
 </head>
 <body>

@@ -1,6 +1,6 @@
 import * as globals from "./globals";
 import { El, ElRaw } from "./types";
-import { attrsStartWith, escapeHTML } from "./utils";
+import { escapeHTML } from "./utils";
 import { get, has, set } from "./reservoir";
 import {
     BIND_PERSIST_ATTR,
@@ -15,99 +15,17 @@ import {
     FOR_IN_DELIMITER,
     HIDDEN_ATTR,
     NO_RECURSE_ATTR,
-    POUR_PREFIX, POUR_PREFIX_DELIMITER,
     PUMP_END_ATTR,
     PUMP_RAW_ATTR,
     PUMP_START_ATTR
 } from "./globals";
-import type { Hydrate } from "./index";
+import { execute } from "./execute";
 
 export async function waitForLoaded () {
     return await new Promise<void>(resolve => {
         if (globals.loaded) return resolve();
         globals.loadedCBs.push(resolve);
     });
-}
-
-export interface IExecuteOptions {
-    silent?: boolean;
-}
-
-export function execute(key: string, $el: El | null, parameters: Record<string, any> = {}, options: IExecuteOptions = {}): any {
-    const initialData = JSON.stringify(globals.data);
-
-    parameters = {
-        ...Object.getOwnPropertyNames(hydrate)
-            .reduce<Record<string, any>>((acc, key) => {
-                acc[key] = (hydrate as Hydrate)[key];
-                return acc;
-            }, {}),
-        ...globals.data,
-        ...parameters
-    };
-
-    let parents = [];
-    let parent: El | null = $el;
-    while (parent) {
-        parents.push(parent);
-        parent = parent.parentElement;
-    }
-
-    for (const parent of parents) {
-        parameters = {
-            ...parameters,
-            ...parent.__Hydrate?.puddle,
-        };
-        for (let attr of attrsStartWith(parent, POUR_PREFIX)) {
-            const key = attr.split(POUR_PREFIX_DELIMITER, 2)[1];
-            const attrValue = parent.getAttribute(attr);
-            if (attrValue === null) continue;
-            const value = execute(attrValue, parent.parentElement, parameters);
-            if (value === globals.executeError) continue;
-            parameters[key] = value;
-        }
-    }
-
-    parameters.$el = $el;
-
-    for (let param of Object.keys(parameters)) {
-        if (!param.match(/^[a-zA-z_]+[a-zA-z0-9_]*$/)) {
-            delete parameters[param];
-        }
-    }
-
-    const envVarNames = Object.keys(parameters);
-    const envVarValues = Object.keys(parameters).map(k => parameters[k]);
-    const execBody = `
-        return (${key});
-    `;
-
-    const start = performance.now();
-    let res: any;
-    try {
-        res = new Function(...envVarNames, execBody).call(window.hydrate, ...envVarValues);
-    } catch (e: any) {
-        if (e instanceof ReferenceError || e instanceof TypeError) {
-            globals.errors.push([key, e]);
-        } else if (e.toString() === 'SyntaxError: Arg string terminates parameters early') {
-            if (!options.silent) {
-                console.error(`Error executing '${key}': ${e}`, envVarNames, envVarValues);
-            }
-        } else {
-            if (!options.silent) {
-                console.error(`Error executing '${key}': ${e}`);
-            }
-        }
-        res = globals.executeError;
-    }
-    const end = performance.now();
-    globals.perf.execs.push(end - start);
-
-    if (initialData !== JSON.stringify(globals.data)) {
-        hydrate();
-    }
-
-    return res;
 }
 
 export function hydrate($el: ElRaw = document as ElRaw) {
