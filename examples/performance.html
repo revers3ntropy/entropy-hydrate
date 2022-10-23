@@ -23,8 +23,6 @@
 			return result;
 		}
 
-		let renders = 0;
-
 		const beforeComponent = performance.now();
 		Component('my-component', ({ text, show }) => html`
             ${console.count('render')}

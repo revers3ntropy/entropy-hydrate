@@ -40,8 +40,14 @@ export function Component
             const propName = attr.replace(/-./g, x => x[1].toUpperCase());
             if (propName.startsWith(EXEC_PREFIX)) {
                 const code = props.$el.getAttribute(attr);
-                if (!code) throw `Invalid value for attribute '${attr}'`;
-                props[propName.substring(1)] = execute(code, props.$el);
+                if (code === null || code === '') {
+                    throw `Invalid value for attribute '${attr}'`;
+                }
+                const value = execute(code, props.$el);
+                if (value === globals.executeError) {
+                    continue;
+                }
+                props[propName.substring(1)] = value;
             } else {
                 props[propName] = props.$el.getAttribute(attr);
             }
