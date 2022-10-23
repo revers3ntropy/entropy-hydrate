@@ -15,11 +15,11 @@ export interface IHydrateInternals {
 }
 
 export type IExtraElProperties = Partial<HTMLInputElement> & {
-    reloadComponent?: Function;
+    reloadComponent?: () => void;
     __Hydrate?: IHydrateInternals
 };
 
-export type El = Element & IExtraElProperties ;
+export type El = Element & IExtraElProperties;
 export type ElRaw = El | HTMLElement | Document | Window;
 
 export interface IPerfData {

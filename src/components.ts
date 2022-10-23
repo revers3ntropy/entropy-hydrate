@@ -1,24 +1,25 @@
+import * as globals from './globals';
 import { El, IExtraElProperties, IHydrateInternals, IProps } from "./types";
 import { attrsAsJson, getComponentId, waitForDocumentReady } from "./utils";
 import { execute, hydrate } from "./hydrate";
-import * as globals from './globals';
-import { DRY_CONTENT_ATTR, EXEC_PREFIX } from "./globals";
+import { DRY_CONTENT_ATTR_COMPONENT, EXEC_PREFIX } from "./globals";
 
-export function Component
-<Props>
+export function Component<Props>
 (name: string, cb: (props: Readonly<Props & IProps>) => unknown):
     (props: Props & IProps) => Promise<unknown>
 {
     type rawProps = { $el: string | El, id?: number, content?: string } & Record<string, any>;
 
+    name = name.toLowerCase();
+
     if (!name.includes('-')) {
-        throw 'Component name must contain a dash';
+        throw `Component name '${name}' must contain a dash`;
     }
     if (customElements.get(name)) {
         throw `Component '${name}' already exists`;
     }
 
-    const addComponentToDOM = async (props: rawProps): Promise<unknown> => {
+    async function addComponentToDOM (props: rawProps): Promise<unknown> {
         await waitForDocumentReady();
 
         if (!('$el' in props) || typeof props.$el === 'undefined') {
@@ -40,10 +41,8 @@ export function Component
             const propName = attr.replace(/-./g, x => x[1].toUpperCase());
             if (propName.startsWith(EXEC_PREFIX)) {
                 const code = props.$el.getAttribute(attr);
-                if (code === null || code === '') {
-                    throw `Invalid value for attribute '${attr}'`;
-                }
-                const value = execute(code, props.$el);
+                if (!code) continue;
+                const value = execute(code, props.$el, {}, { silent: true });
                 if (value === globals.executeError) {
                     continue;
                 }
@@ -53,7 +52,7 @@ export function Component
             }
         }
 
-        const dryContent = props.$el.getAttribute(DRY_CONTENT_ATTR) ?? props.$el.innerHTML
+        const dryContent = props.$el.getAttribute(DRY_CONTENT_ATTR_COMPONENT) ?? props.$el.innerHTML
         props.content = dryContent;
         props.id = getComponentId();
 
@@ -67,11 +66,11 @@ export function Component
             hydrate(child);
         }
 
-        if (!props.$el.hasAttribute(DRY_CONTENT_ATTR)) {
-            props.$el.setAttribute(DRY_CONTENT_ATTR, dryContent);
+        if (!props.$el.hasAttribute(DRY_CONTENT_ATTR_COMPONENT)) {
+            props.$el.setAttribute(DRY_CONTENT_ATTR_COMPONENT, dryContent);
         }
         return props.$el;
-    };
+    }
 
     class CustomComponent extends HTMLElement implements IExtraElProperties {
 
@@ -112,7 +111,7 @@ export function Component
                 };
             }
 
-            this.classList.add('reservoir-container');
+            this.classList.add('__hydrate-container');
             addComponentToDOM({
                 $el: this
             });
@@ -141,6 +140,7 @@ export function Component
     }
 
     customElements.define(name, CustomComponent);
+    globals.components[name] = CustomComponent;
 
     return addComponentToDOM;
 }

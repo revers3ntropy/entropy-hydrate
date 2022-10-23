@@ -7,7 +7,7 @@ export interface IHydrateInternals {
 	puddle: Record<string, any>;
 }
 export declare type IExtraElProperties = Partial<HTMLInputElement> & {
-	reloadComponent?: Function;
+	reloadComponent?: () => void;
 	__Hydrate?: IHydrateInternals;
 };
 export declare type El = Element & IExtraElProperties;

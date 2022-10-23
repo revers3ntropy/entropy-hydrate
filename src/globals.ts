@@ -4,21 +4,25 @@ import { ElRaw } from "./types";
 export const
     EXEC_PREFIX = '$',
     DRY_CONTENT_ATTR = '__hydrate-dry-content',
+    DRY_CONTENT_ATTR_COMPONENT = '__hydrate-component-content-dry',
     DRY_CONTENT_FOR_ATTR = '__hydrate-foreach-dry',
     DRY_CONTENT_HIDDEN_ATTR = '__hydrate-hidden-dry',
     POUR_PREFIX = 'data-',
     POUR_PREFIX_DELIMITER = '-',
     FOR_EACH_PREFIX = 'each.',
+    FOR_EACH_TAG_NAME_ATTR = 'each',
     EACH_DELIMITER = '.',
     FOR_IN_DELIMITER = ' in ',
     FOR_ATTR = 'foreach',
     BIND_PREFIX = '@',
-    BIND_PERSIST_ATTR = 'persist',
-    PUMP_RAW_ATTR = '$dangerously-set-inner-html',
-    PUMP_END_ATTR = '$end',
-    PUMP_START_ATTR = '$start',
+    BIND_PERSIST_ATTR = '@-persist',
+    PUMP_RAW_ATTR = '$-dangerously-set-inner-html',
+    PUMP_END_ATTR = '$-end',
+    PUMP_START_ATTR = '$-start',
     HIDDEN_ATTR = 'hidden',
     NO_RECURSE_ATTR = 'ignore-contents';
+
+export const components: Record<string, Function> = {};
 
 export let data: Record<string, unknown> = {};
 export let lsData: Record<string, unknown> = {};

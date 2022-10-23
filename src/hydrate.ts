@@ -11,7 +11,7 @@ import {
     DRY_CONTENT_HIDDEN_ATTR, EACH_DELIMITER,
     EXEC_PREFIX,
     FOR_ATTR,
-    FOR_EACH_PREFIX,
+    FOR_EACH_PREFIX, FOR_EACH_TAG_NAME_ATTR,
     FOR_IN_DELIMITER,
     HIDDEN_ATTR,
     NO_RECURSE_ATTR,
@@ -29,7 +29,11 @@ export async function waitForLoaded () {
     });
 }
 
-export function execute(key: string, $el: El | null, parameters: Record<string, any> = {}): any {
+export interface IExecuteOptions {
+    silent?: boolean;
+}
+
+export function execute(key: string, $el: El | null, parameters: Record<string, any> = {}, options: IExecuteOptions = {}): any {
     const initialData = JSON.stringify(globals.data);
 
     parameters = {
@@ -86,9 +90,13 @@ export function execute(key: string, $el: El | null, parameters: Record<string, 
         if (e instanceof ReferenceError || e instanceof TypeError) {
             globals.errors.push([key, e]);
         } else if (e.toString() === 'SyntaxError: Arg string terminates parameters early') {
-            console.error(`Error executing '${key}': ${e}`, envVarNames, envVarValues);
+            if (!options.silent) {
+                console.error(`Error executing '${key}': ${e}`, envVarNames, envVarValues);
+            }
         } else {
-            console.error(`Error executing '${key}': ${e}`);
+            if (!options.silent) {
+                console.error(`Error executing '${key}': ${e}`);
+            }
         }
         res = globals.executeError;
     }
@@ -102,14 +110,22 @@ export function execute(key: string, $el: El | null, parameters: Record<string, 
     return res;
 }
 
-export function hydrate($el: ElRaw = document) {
+export function hydrate($el: ElRaw = document as ElRaw) {
     const start = performance.now();
+
+    const isCustom = "tagName" in $el && $el.tagName.includes('-');
 
     for (let hook of globals.hooks.preHydrate) {
         hook($el);
     }
 
+    if (isCustom) {
+        ($el as El).reloadComponent?.();
+    }
+
     if ($el instanceof Element) {
+
+
         if ($el.hasAttribute(HIDDEN_ATTR) || $el.hasAttribute(DRY_CONTENT_HIDDEN_ATTR)) {
             if (!hydrateIf($el)) {
                 return;
@@ -124,11 +140,13 @@ export function hydrate($el: ElRaw = document) {
             bind($el);
         }
 
-        for (let attr of $el.getAttributeNames() || []) {
-            if (attr.startsWith(EXEC_PREFIX)) {
-                hydrateAttribute($el, attr);
-            } else if (attr.startsWith(BIND_PREFIX)) {
-                bindListener($el, attr);
+        if (!isCustom) {
+            for (let attr of $el.getAttributeNames() || []) {
+                if (attr.startsWith(EXEC_PREFIX)) {
+                    hydrateAttribute($el, attr);
+                } else if (attr.startsWith(BIND_PREFIX)) {
+                    bindListener($el, attr);
+                }
             }
         }
 
@@ -296,6 +314,9 @@ function hydrateAttribute($el: El, attrName: string) {
     if (!key) throw `Cannot find key for ${attrName}`;
     let value = execute(key, $el);
     if (value === globals.executeError) return;
+    if (typeof value !== 'string') {
+        value = JSON.stringify(value);
+    }
     $el.setAttribute(attrName.substring(1), value);
 }
 
@@ -333,10 +354,12 @@ function hydrateFor($el: El) {
         }
     }
 
+    const tagName = $el.getAttribute(FOR_EACH_TAG_NAME_ATTR) || 'div';
+
     $el.innerHTML = '';
 
     for (let item of iterator) {
-        const itemDiv = <El>document.createElement('div');
+        const itemDiv = <El>document.createElement(tagName);
         itemDiv.innerHTML = dry;
         itemDiv.__Hydrate ??= { trackedEvents: {}, puddle: {} };
         itemDiv.__Hydrate.puddle[symbol] = item;
@@ -349,7 +372,7 @@ function hydrateFor($el: El) {
             itemDiv.setAttribute(attr.split(EACH_DELIMITER, 2)[1], value);
         }
 
-        $el.classList.add('reservoir-container');
+        $el.classList.add('__hydrate-container');
         $el.appendChild(itemDiv);
     }
 

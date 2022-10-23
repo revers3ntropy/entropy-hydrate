@@ -19,9 +19,9 @@
         // of the <my-button> tag
         // Notice that the raw HTML 'content' prop must be shown to be trusted using `raw`
         // otherwise the HTML would be rendered as text.
-        Component('my-button', ({ bgColor, content }) => html`
+        Component('my-button', ({ style, content }) => html`
             <button
-                style="background-color: ${bgColor}; border: none; padding: 4px; margin: 4px;"
+                style="background-color: ${style.bgColor}; border: none; padding: 4px; margin: 4px;"
                 @click="${() => update('clicks', x => x + 1)}()"
             >
                 ${raw(content)}
@@ -39,7 +39,9 @@
 <body>
 <main>
     <my-container $a="clicks">
-        <my-button $bg-color="`rgb(${(clicks * 10) % 255}, 100, 100)`">Click Me!</my-button>
+        <my-button $style="{ bgColor: `rgb(${(clicks * 10) % 255}, 100, 100)` }">
+            Click Me!
+        </my-button>
         <p $="clicks"> Clicks</p>
     </my-container>
 </main>

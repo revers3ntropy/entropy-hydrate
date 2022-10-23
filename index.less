@@ -14,11 +14,14 @@
     display: none !important;
 }
 
-/*
-    Don't interfere with 'display' style,
-    or example allow inline components to nest inside this,
-    while using a div for maximum flexibility.
- */
-.reservoir-container {
-    display: contents;
+.__hydrate {
+    /*
+        Don't interfere with 'display' style,
+        or example allow inline components to nest inside this,
+        while using a div for maximum flexibility.
+     */
+    &-container {
+        display: contents;
+    }
 }
+
